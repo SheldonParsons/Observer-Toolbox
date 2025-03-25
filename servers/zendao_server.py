@@ -10,7 +10,7 @@ from core._config import _const
 from core._config._exception import HttpResponseException
 from core._deco import ServerRunner
 from core.base import Server, Parameter
-from core.utils import HttpProtocolEnum, HttpMethodEnum
+from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict
 
 dotenv.load_dotenv()
 
@@ -29,26 +29,23 @@ class BugStatus(str, Enum):
 
 class ZenDaoParameter(Parameter):
 
-    def __init__(self, zendao_username=None, zendao_password=None, zendao_execution_id=None, zendao_product_id=None,
-                 zendao_bug_limit=2000, zendao_bug_status="all",
+    def __init__(self, zendao_username=None, zendao_password=None, zendao_execution_id: int = None,
+                 zendao_product_id: int = None,
+                 zendao_bug_limit: int = 2000, zendao_bug_status="all",
                  *args, **kwargs):
         self.zendao_username = zendao_username
         self.zendao_password = zendao_password
-        self.zendao_execution_id = zendao_execution_id
-        self.zendao_product_id = zendao_product_id
-        self.zendao_bug_limit = zendao_bug_limit
+        self.zendao_execution_id = int(zendao_execution_id)
+        self.zendao_product_id = int(zendao_product_id)
+        self.zendao_bug_limit = int(zendao_bug_limit)
         self.zendao_bug_status = zendao_bug_status
 
 
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
 
-    def __init__(self, parameter: ZenDaoParameter = None):
-        super().__init__(os.getenv("ZENDAO_BASE_DOMIAN"), HttpProtocolEnum.HTTPS)
-        self.parameter = ZenDaoParameter() if parameter is None else parameter
-        self.set_base_headers()
-        self.tokenization()
-        self.set_tokenization_headers()
+    def __init__(self):
+        super().__init__(domain=os.getenv("ZENDAO_BASE_DOMAIN"), protocol=HttpProtocolEnum.HTTPS)
 
     class _Tokenization:
 
@@ -88,18 +85,17 @@ class ZenDaoServer(Server):
         self.sender.send()
 
     def set_tokenization_headers(self):
-        _tokenization_instance = self._Tokenization(**json.loads(self.sender.result.text))
+        _tokenization_instance = self._Tokenization(**self.sender.result.json())
         if _tokenization_instance.Token is None:
             raise HttpResponseException(
-                _const.EXCEPTION.HttpLoginFailedException % (
-                    json.dumps(self.sender.result.json(), ensure_ascii=False),))
+                _const.EXCEPTION.Http_Login_Failed_Exception % (self.sender.result.json(),))
         self.sender.patch_headers(_tokenization_instance.__dict__)
 
     def get_headers(self):
         return self.sender.headers
 
     def get_products(self):
-        def _products_filter(product_list) -> list['Product']:
+        def _products_filter(product_list) -> list[ZenDaoServer.Product]:
             res = []
             for product in product_list:
                 _self_product = self.Product(**product)
@@ -158,25 +154,29 @@ class ZenDaoServer(Server):
                 self.limit = limit
                 self.status = status
 
-        def _bug_filter(bug_list):
-            res = []
-            result_dict = {}
+        def _gen_summary_info(bug_list):
+            class ResultDict:
+
+                def __init__(self):
+                    self.severity_mapping = HiddenDefaultDict(int, self.update_total)
+                    self.resolution_mapping = HiddenDefaultDict(int)
+                    self.total = 0
+
+                def update_total(self, _, old_value, new_value):
+                    self.total += (new_value - old_value)
+
+            result_dict = ResultDict()
             for bug in bug_list:
                 _self_bug = self.Bug(**bug)
                 if _self_bug.execution == execution_id:
-                    res.append(_self_bug)
-                    result_dict.setdefault(_self_bug.severity, 0)
-                    result_dict[_self_bug.severity] += 1
-                    result_dict.setdefault(_self_bug.resolution, 0)
-                    result_dict[_self_bug.resolution] += 1
-            result_dict.setdefault("total", len(res))
-            return res, result_dict
+                    result_dict.severity_mapping[_self_bug.severity] += 1
+                    result_dict.resolution_mapping[_self_bug.resolution] += 1
+            return result_dict.__dict__
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
         result: Response = self.sender.send()
         bug_list = _BugFilter(**result.json()).bugs
-        res, result_dict = _bug_filter(bug_list)
-        return res, result_dict
+        return _gen_summary_info(bug_list)
 
 
 ZenDaoProduct = ZenDaoServer.Product

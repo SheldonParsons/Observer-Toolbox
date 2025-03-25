@@ -1,18 +1,19 @@
 import functools
+from core.utils import IndexableDict
 
-server_stock = []
+server_stock = IndexableDict()
 
 
-def ServerRunner(parameter=None):
-    def _warpper(cls):
+class ServerRunner:
+    def __init__(self, parameter=None):
+        self.parameter = parameter
+
+    def __call__(self, cls):
         global server_stock
-        setattr(cls, "parameter", parameter)
-        server_stock.append(cls)
+        server_stock[cls] = self.parameter
 
         @functools.wraps(cls)
-        def _inner(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             return cls(*args, **kwargs)
 
-        return _inner
-
-    return _warpper
+        return wrapper

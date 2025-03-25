@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from enum import Enum
 from typing import Union
 
@@ -32,7 +33,7 @@ retries = Retry(
 
 class Sender:
 
-    def __init__(self, domain, protocol=HttpProtocolEnum.HTTP):
+    def __init__(self, domain=None, protocol=HttpProtocolEnum.HTTP):
         adapter = HTTPAdapter(max_retries=retries)
         self.session = requests.Session()
         [self.session.mount(proxy, adapter) for proxy in _const.HTTP_CONFIG.adapters]
@@ -153,6 +154,26 @@ class Sender:
         return self.result
 
 
+class HiddenDefaultDict(defaultdict):
+    def __init__(self, default_factory=None, callback=None):
+        super().__init__(default_factory)
+        self.callback = callback
+
+    def __setitem__(self, key, value):
+        old_value = self.get(key, self.default_factory())
+        super().__setitem__(key, value)
+        if self.callback:
+            self.callback(key, old_value, value)
+
+    def __getattr__(self, item):
+        if self.default_factory is None:
+            return self.default_factory
+        return super().__getattribute__(item)
+
+    def __repr__(self):
+        return dict.__repr__(self)
+
+
 class RunnerParameter:
 
     def __init__(self, args: list):
@@ -167,3 +188,43 @@ class RunnerParameter:
                     i += 2
                     continue
             i += 1
+
+
+class IndexableDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._keys = list(super().keys())
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            self._keys.append(key)
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._keys.remove(key)
+
+    def get_key(self, index):
+        return self._keys[index]
+
+    def get_value(self, index):
+        return self[self._keys[index]]
+
+    def get_item(self, index):
+        key = self._keys[index]
+        return (key, self[key])
+
+    def update(self, other=(), **kwargs):
+        for k, v in dict(other).items():
+            self.__setitem__(k, v)
+        for k, v in kwargs.items():
+            self.__setitem__(k, v)
+
+    def keys(self):
+        return self._keys.copy()
+
+    def values(self):
+        return [self[key] for key in self._keys]
+
+    def items(self):
+        return [(key, self[key]) for key in self._keys]

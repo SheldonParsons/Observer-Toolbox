@@ -6,7 +6,7 @@ from core.base import Plugin
 class ReportGenerator(Plugin):
     def __init__(self):
         self.reports = []
-    
+
     def on_data_collected(self, system_name: str, data: Dict[str, Any]):
         report_entry = {
             "system": system_name,

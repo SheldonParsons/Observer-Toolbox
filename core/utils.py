@@ -1,4 +1,6 @@
+import functools
 import json
+import threading
 from collections import defaultdict
 from enum import Enum
 from typing import Union
@@ -189,8 +191,11 @@ class RunnerParameter:
                     continue
             i += 1
 
+    def get_args_mapping(self):
+        return self.args_mapping
 
-class IndexableDict(dict):
+
+class IndexingDict(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._keys = list(super().keys())
@@ -228,3 +233,18 @@ class IndexableDict(dict):
 
     def items(self):
         return [(key, self[key]) for key in self._keys]
+
+
+def singleton(cls):
+    instances = {}
+    lock = threading.Lock()
+
+    @functools.wraps(cls)
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            with lock:
+                if cls not in instances:
+                    instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance

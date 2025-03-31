@@ -1,6 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, TypeVar, Generic, Union, Any
-from core.utils import Sender, IndexableDict, HiddenDefaultDict
+from typing import TypeVar, Generic, Union, List
+
+from core.monitor import MonitorBase
+from core.utils import Sender, IndexingDict, HiddenDefaultDict
+
+
+def get_monitor_class(_class) -> List:
+    for key, value in _class.__dict__.items():
+        if callable(value) and key != "__init__":
+            yield key
+
+
+class Data:
+
+    def __init__(self, obj, data, method_name):
+        self.data = data
+        self.obj = obj
+        self.method_name = method_name
 
 
 class Parameter:
@@ -9,11 +25,12 @@ class Parameter:
         return None
 
 
-class RunnerResultBase:
+class BaseRunnerResult:
     pass
 
 
-class Server(ABC):
+class Server(ABC, metaclass=MonitorBase):
+
     def __init__(self, **kwargs):
         self.sender = Sender(**kwargs)
         self.parameter: Union[Parameter, dict] = HiddenDefaultDict(None)
@@ -41,7 +58,7 @@ class Server(ABC):
         pass
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> RunnerResultBase:
+    def run(self, *args, **kwargs) -> BaseRunnerResult:
         pass
 
 
@@ -50,7 +67,7 @@ ServerType = TypeVar('ServerType', bound=Server)
 
 class ServerStock(Generic[ServerType]):
 
-    def __init__(self, stock: IndexableDict, args_mapping) -> None:
+    def __init__(self, stock: IndexingDict, args_mapping) -> None:
         self.current = 0
         self.stock = stock
         self.args_mapping = args_mapping
@@ -58,7 +75,7 @@ class ServerStock(Generic[ServerType]):
     def __iter__(self):
         return self
 
-    def __next__(self) -> ServerType:
+    def __next__(self) -> Union[ServerType, str]:
         try:
             server_class, server_parameter_class = self.stock.get_item(self.current)
             self.current += 1
@@ -67,25 +84,3 @@ class ServerStock(Generic[ServerType]):
             return server_instance
         except IndexError:
             raise StopIteration
-
-
-class Plugin(ABC):
-    @abstractmethod
-    def on_data_collected(self, system_name: str, data: Dict[str, Any]):
-        """处理收集到的数据"""
-        pass
-    
-class PluginManager:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.plugins: List[Plugin] = [] 
-        return cls._instance
-    
-    def register(self, plugin: 'Plugin'):
-        self.plugins.append(plugin)
-    
-    def get_plugins(self) -> List['Plugin']:
-        return self.plugins

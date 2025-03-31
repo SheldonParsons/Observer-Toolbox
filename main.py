@@ -1,6 +1,7 @@
-from core.base import PluginManager
-from plugins.report_plugin import ReportGenerator
+from core._config import PluginPool
+from core.base import BaseRunnerResult, Data
 from core import generator
+from core.plugin_base import ServerPlugin
 from servers import ZenDaoServer
 from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
 
@@ -21,25 +22,25 @@ def zendao_abs():
         print(f"execution.id:{execution.id},execution.name:{execution.name}")
 
 
-def main_testing1():
-    # 创建插件实例
-    report_plugin = ReportGenerator()
-    # 注册插件
-    PluginManager().register(report_plugin)
-    generator.start(
-        ["--zendao_product_id", 157, "--zendao_execution_id", 3572, "--zendao_bug_limit", 2000, "--zendao_bug_status",
-         "all"])
+class ReportPlugin(ServerPlugin):
+
+    def run(self, *args, **kwargs) -> BaseRunnerResult:
+        print("run plugin")
+
+    def get_data(self, data: Data):
+        print(f"method_name: {data.method_name}")
+        print(f"obj:{data.obj}")
+        print(f"data:{data.data}")
 
 
-def main_testing2():
-    # 创建插件实例
-    report_plugin = ReportGenerator()
-    # 注册插件
-    PluginManager().register(report_plugin)
+def main_testing3():
+    report_plugin1 = ReportPlugin()
+    report_plugin2 = ReportPlugin()
+    PluginPool.register(report_plugin1)
+    PluginPool.register(report_plugin2)
     generator.start(["--zendao_username", "a80646", "--zendao_password", "Woaini^6636865", "--zendao_product_id", 1123,
                      "--zendao_execution_id", 3572])
 
 
 if __name__ == '__main__':
-    # zendao_abs()
-    main_testing1()
+    main_testing3()

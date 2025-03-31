@@ -22,6 +22,7 @@ def start(args):
 def _(args: None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
+
     return _except()
 
 
@@ -39,6 +40,7 @@ def _(args: str):
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
     return _except()
+
 
 @start.register
 def _(args: list):

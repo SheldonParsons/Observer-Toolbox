@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 
 import dotenv
@@ -8,7 +7,7 @@ from requests.models import Response
 
 from core._config import _const
 from core._config._exception import HttpResponseException
-from core._deco import ServerRunner, report_callback
+from core._deco import ServerRunner
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict
 
@@ -41,38 +40,43 @@ class ZenDaoParameter(Parameter):
         self.zendao_bug_status = zendao_bug_status
 
 
+class _Tokenization:
+
+    def __init__(self, token=None, *args, **kwargs):
+        self.Token = token
+
+
+class Product:
+    def __init__(self, id=None, name=None, status=None, *args, **kwargs):
+        self.id = id
+        self.name = name
+        self.status = status
+
+
+class Project:
+    def __init__(self, id=None, name=None, *args, **kwargs):
+        self.id = id
+        self.name = name
+
+
+class Execution:
+    def __init__(self, id=None, name=None, *args, **kwargs):
+        self.id = id
+        self.name = name
+
+
+class Bug:
+    def __init__(self, severity=None, resolution=None, execution=None, *args, **kwargs):
+        self.severity = severity
+        self.resolution = resolution
+        self.execution = execution
+
+
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
 
     def __init__(self):
         super().__init__(domain=os.getenv("ZENDAO_BASE_DOMAIN"), protocol=HttpProtocolEnum.HTTPS)
-
-    class _Tokenization:
-
-        def __init__(self, token=None, *args, **kwargs):
-            self.Token = token
-
-    class Product:
-        def __init__(self, id=None, name=None, status=None, *args, **kwargs):
-            self.id = id
-            self.name = name
-            self.status = status
-
-    class Project:
-        def __init__(self, id=None, name=None, *args, **kwargs):
-            self.id = id
-            self.name = name
-
-    class Execution:
-        def __init__(self, id=None, name=None, *args, **kwargs):
-            self.id = id
-            self.name = name
-
-    class Bug:
-        def __init__(self, severity=None, resolution=None, execution=None, *args, **kwargs):
-            self.severity = severity
-            self.resolution = resolution
-            self.execution = execution
 
     def set_base_headers(self):
         self.sender.headers = {"Content-Type": "application/json"}
@@ -85,7 +89,7 @@ class ZenDaoServer(Server):
         self.sender.send()
 
     def set_tokenization_headers(self):
-        _tokenization_instance = self._Tokenization(**self.sender.result.json())
+        _tokenization_instance = _Tokenization(**self.sender.result.json())
         if _tokenization_instance.Token is None:
             raise HttpResponseException(
                 _const.EXCEPTION.Http_Login_Failed_Exception % (self.sender.result.json(),))
@@ -95,10 +99,10 @@ class ZenDaoServer(Server):
         return self.sender.headers
 
     def get_products(self):
-        def _products_filter(product_list) -> list[ZenDaoServer.Product]:
+        def _products_filter(product_list) -> list[Product]:
             res = []
             for product in product_list:
-                _self_product = self.Product(**product)
+                _self_product = Product(**product)
                 if _self_product.status == ProductStatus.NORMAL.value:
                     res.append(_self_product)
             return res
@@ -127,7 +131,7 @@ class ZenDaoServer(Server):
         self.sender.path = os.getenv("ZENDAO_PROJECT_LIST")
         self.sender.params = _ProjectParams(product_id).__dict__
         result: Response = self.sender.send()
-        return [self.Project(**project) for project in _ProjectFilter(**result.json()).projects]
+        return [Project(**project) for project in _ProjectFilter(**result.json()).projects]
 
     def get_executions(self, project_id):
         class _ExecutionFilter:
@@ -137,9 +141,8 @@ class ZenDaoServer(Server):
         self.sender.path = os.getenv("ZENDAO_EXECUTION_LIST") % (project_id,)
         self.sender.method = HttpMethodEnum.GET
         result: Response = self.sender.send()
-        return [self.Execution(**execution) for execution in _ExecutionFilter(**result.json()).executions]
+        return [Execution(**execution) for execution in _ExecutionFilter(**result.json()).executions]
 
-    @report_callback
     def run(self, *args, **kwargs):
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
@@ -168,7 +171,7 @@ class ZenDaoServer(Server):
 
             result_dict = ResultDict()
             for bug in bug_list:
-                _self_bug = self.Bug(**bug)
+                _self_bug = Bug(**bug)
                 if _self_bug.execution == execution_id:
                     result_dict.severity_mapping[_self_bug.severity] += 1
                     result_dict.resolution_mapping[_self_bug.resolution] += 1
@@ -180,7 +183,7 @@ class ZenDaoServer(Server):
         return _gen_summary_info(bug_list)
 
 
-ZenDaoProduct = ZenDaoServer.Product
-ZenDaoProject = ZenDaoServer.Project
-ZenDaoExecution = ZenDaoServer.Execution
-ZenDaoBug = ZenDaoServer.Bug
+ZenDaoProduct = Product
+ZenDaoProject = Project
+ZenDaoExecution = Execution
+ZenDaoBug = Bug

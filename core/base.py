@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Union, Any
+from typing import Dict, List, TypeVar, Generic, Union, Any
 from core.utils import Sender, IndexableDict, HiddenDefaultDict
 
 
@@ -67,3 +67,25 @@ class ServerStock(Generic[ServerType]):
             return server_instance
         except IndexError:
             raise StopIteration
+
+
+class Plugin(ABC):
+    @abstractmethod
+    def on_data_collected(self, system_name: str, data: Dict[str, Any]):
+        """处理收集到的数据"""
+        pass
+    
+class PluginManager:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.plugins: List[Plugin] = [] 
+        return cls._instance
+    
+    def register(self, plugin: 'Plugin'):
+        self.plugins.append(plugin)
+    
+    def get_plugins(self) -> List['Plugin']:
+        return self.plugins

@@ -8,7 +8,7 @@ from requests.models import Response
 
 from core._config import _const
 from core._config._exception import HttpResponseException
-from core._deco import ServerRunner
+from core._deco import ServerRunner, report_callback
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict
 
@@ -139,6 +139,7 @@ class ZenDaoServer(Server):
         result: Response = self.sender.send()
         return [self.Execution(**execution) for execution in _ExecutionFilter(**result.json()).executions]
 
+    @report_callback
     def run(self, *args, **kwargs):
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id

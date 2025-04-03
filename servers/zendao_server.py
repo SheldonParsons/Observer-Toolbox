@@ -7,8 +7,8 @@ from requests.models import Response
 
 from core._config import _const
 from core._config._exception import HttpResponseException
-from core._deco import ServerRunner
-from core.base import Server, Parameter
+from core.deco import ServerRunner
+from core.base import Server, Parameter, RunnerResult
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict
 
 dotenv.load_dotenv()
@@ -74,6 +74,7 @@ class Bug:
 
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
+    source_sys = "zen_dao_server"
 
     def __init__(self):
         super().__init__(domain=os.getenv("ZENDAO_BASE_DOMAIN"), protocol=HttpProtocolEnum.HTTPS)
@@ -180,7 +181,7 @@ class ZenDaoServer(Server):
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
         result: Response = self.sender.send()
         bug_list = _BugFilter(**result.json()).bugs
-        return _gen_summary_info(bug_list)
+        return RunnerResult(self, _gen_summary_info(bug_list))
 
 
 ZenDaoProduct = Product

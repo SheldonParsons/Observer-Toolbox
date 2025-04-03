@@ -1,3 +1,3 @@
-from ._data import PluginPool
+from ._global_obj import PluginPool
 
 __all__ = ['PluginPool']

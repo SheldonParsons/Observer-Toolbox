@@ -1,14 +1,11 @@
 import functools
-import json
 import threading
+import requests
 from collections import defaultdict
 from enum import Enum
 from typing import Union
-
-import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
-
 from core._config import _const
 from core._config._exception import HttpConfigException
 from urllib.parse import urljoin

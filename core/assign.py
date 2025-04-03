@@ -1,7 +1,7 @@
 from functools import singledispatch
 
 from core._config import _const
-from core._execute import _runner
+from core.execute import _runner
 
 
 @singledispatch

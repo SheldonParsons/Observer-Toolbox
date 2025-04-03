@@ -1,22 +1,16 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import TypeVar, Generic, Union, List
 
 from core.monitor import MonitorBase
 from core.utils import Sender, IndexingDict, HiddenDefaultDict
 
-
-def get_monitor_class(_class) -> List:
-    for key, value in _class.__dict__.items():
-        if callable(value) and key != "__init__":
-            yield key
+T = TypeVar("T", bound=object)
 
 
-class Data:
-
-    def __init__(self, obj, data, method_name):
-        self.data = data
-        self.obj = obj
-        self.method_name = method_name
+class SourceType(str, Enum):
+    SERVER = "server"
+    PLUGIN = "plugin"
 
 
 class Parameter:
@@ -25,11 +19,31 @@ class Parameter:
         return None
 
 
-class BaseRunnerResult:
-    pass
+class RunnerResult:
+
+    def __init__(self, source_object: Union['Server', 'Plugin'], data=None):
+        self.source_type = source_object.__dict__.get("source_type", None) or str(type(source_object))
+        self.source_name = source_object.__dict__.get("source_name", None) or source_object.__class__.__name__
+        self.data = data
+
+    def get_data(self):
+        return self.data
+
+    def set_data(self, data):
+        self.data = data
+
+
+class Data:
+
+    def __init__(self, obj, data, method_name):
+        self.result: RunnerResult = data
+        self.obj = obj
+        self.method_name = method_name
 
 
 class Server(ABC, metaclass=MonitorBase):
+    source_type = SourceType.SERVER
+    __restrict_init__ = True
 
     def __init__(self, **kwargs):
         self.sender = Sender(**kwargs)
@@ -45,6 +59,9 @@ class Server(ABC, metaclass=MonitorBase):
         self.tokenization()
         self.set_tokenization_headers()
 
+    def reset_sender(self, domain=None, protocol=None):
+        self.sender = Sender(domain=domain or self.sender.domain, protocol=protocol or self.sender.protocol)
+
     @abstractmethod
     def set_base_headers(self, *args, **kwargs) -> None:
         pass
@@ -58,11 +75,41 @@ class Server(ABC, metaclass=MonitorBase):
         pass
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> BaseRunnerResult:
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
         pass
 
 
 ServerType = TypeVar('ServerType', bound=Server)
+
+
+def get_monitor_class(_class=None) -> List:
+    _class = _class or Server
+    for key, value in _class.__dict__.items():
+        if callable(value) and key != "__init__":
+            yield key
+
+
+class Plugin(ABC, metaclass=MonitorBase):
+    source_type = SourceType.PLUGIN
+    plugin_allow_monitor_functions = ["run"]
+    allow_monitor_functions = []
+
+    @abstractmethod
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+        pass
+
+    def get_notify(self, data: Data):
+        pass
+
+
+class ServerPlugin(Plugin):
+    """
+    监听服务类型的插件统一继承的父类
+    """
+    server_allow_monitor_functions = ["initialize", "run"]
+
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+        raise NotImplementedError("插件子类必须实现 run 方法！")
 
 
 class ServerStock(Generic[ServerType]):

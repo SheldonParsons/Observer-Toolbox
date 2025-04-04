@@ -24,7 +24,6 @@ class _PluginPool:
         self.plugins = []
 
     def register(self, plugin):
-        print(f"plugin-plugin:{plugin}")
         self.plugins.append(plugin)
 
     def get_plugins(self):

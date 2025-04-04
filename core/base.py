@@ -20,7 +20,6 @@ class Parameter:
 class RunnerResult:
 
     def __init__(self, source_object: Union['Server', 'Plugin'], data=None):
-        print(f"source_object.source_type:{getattr(source_object, 'source_type', None)}")
         self.source_type = getattr(source_object, 'source_type', None) or str(type(source_object))
         self.source_name = getattr(source_object, 'source_name', None) or source_object.__class__.__name__
         self.data = data

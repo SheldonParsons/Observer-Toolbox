@@ -26,7 +26,7 @@ def zen_dao_interface_testing():
         print(f"execution.id:{execution.id},execution.name:{execution.name}")
 
 
-class ReportPlugin1(generator.ServicePlugin):
+class ReportPlugin1(ServicePlugin):
     source_name = "ReportPlugin1--source_name-rewrite"
 
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
@@ -44,7 +44,7 @@ class ReportPlugin1(generator.ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-class ReportPlugin2(generator.ServicePlugin):
+class ReportPlugin2(ServicePlugin):
     allow_monitor_functions = ["notice"]
 
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
@@ -80,8 +80,24 @@ class ReportPlugin3(ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-class GenericMonitor(Monitor):
+class ReportPlugin4(ServicePlugin):
 
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+        print("run plugin 3")
+        return "result plugin 3"
+
+    def get_notify(self, data: Data):
+        print("*" * 10 + "ReportPlugin4 Monitor" + "*" * 10)
+        print(f"method_name: {data.method_name}")
+        print(f"obj:{data.obj}")
+        print(f"data:{data.result}")
+        result: RunnerResult = data.result
+        print(f"source_name:{result.source_name}")
+        print(f"source_type:{result.source_type}")
+        print(f"get_data():{result.get_data()}")
+
+
+class GenericMonitor(Monitor):
     source_name = "GenericMonitor--source_name-rewrite"
 
     def notice(self):
@@ -99,7 +115,7 @@ def main_testing3():
     PluginPool.register(report_plugin3)
     GenericMonitor().notice()
     generator.start(["--zendao_username", "a80646", "--zendao_password", "Woaini^6636865", "--zendao_product_id", 1123,
-                     "--zendao_execution_id", 3572, "--zendao_bug_limit", 100])
+                     "--zendao_execution_id", 3572, "--zendao_bug_limit", 100], [ReportPlugin4()])
 
 
 if __name__ == '__main__':

@@ -74,7 +74,6 @@ class Bug:
 
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
-    source_sys = "zen_dao_server"
 
     def __init__(self):
         super().__init__(domain=os.getenv("ZENDAO_BASE_DOMAIN"), protocol=HttpProtocolEnum.HTTPS)

@@ -1,16 +1,14 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import TypeVar, Generic, Union, List
 
 from core.monitor import MonitorBase
+from core.root import SourceType
 from core.utils import Sender, IndexingDict, HiddenDefaultDict
 
 T = TypeVar("T", bound=object)
 
 
-class SourceType(str, Enum):
-    SERVER = "server"
-    PLUGIN = "plugin"
+
 
 
 class Parameter:
@@ -22,8 +20,9 @@ class Parameter:
 class RunnerResult:
 
     def __init__(self, source_object: Union['Server', 'Plugin'], data=None):
-        self.source_type = source_object.__dict__.get("source_type", None) or str(type(source_object))
-        self.source_name = source_object.__dict__.get("source_name", None) or source_object.__class__.__name__
+        print(f"source_object.source_type:{getattr(source_object, 'source_type', None)}")
+        self.source_type = getattr(source_object, 'source_type', None) or str(type(source_object))
+        self.source_name = getattr(source_object, 'source_name', None) or source_object.__class__.__name__
         self.data = data
 
     def get_data(self):
@@ -43,6 +42,7 @@ class Data:
 
 class Server(ABC, metaclass=MonitorBase):
     source_type = SourceType.SERVER
+    source_name = None
     __restrict_init__ = True
 
     def __init__(self, **kwargs):
@@ -91,6 +91,7 @@ def get_monitor_class(_class=None) -> List:
 
 class Plugin(ABC, metaclass=MonitorBase):
     source_type = SourceType.PLUGIN
+    source_name = None
     plugin_allow_monitor_functions = ["run"]
     allow_monitor_functions = []
 

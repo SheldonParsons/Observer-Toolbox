@@ -27,6 +27,7 @@ def zen_dao_interface_testing():
 
 
 class ReportPlugin1(generator.ServicePlugin):
+    source_name = "ReportPlugin1--source_name-rewrite"
 
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
         print("run plugin 1")
@@ -79,7 +80,9 @@ class ReportPlugin3(ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-class GenericMonitor(metaclass=Monitor):
+class GenericMonitor(Monitor):
+
+    source_name = "GenericMonitor--source_name-rewrite"
 
     def notice(self):
         print("there is notice function")

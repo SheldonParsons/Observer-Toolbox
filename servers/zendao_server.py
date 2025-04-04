@@ -180,7 +180,7 @@ class ZenDaoServer(Server):
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
         result: Response = self.sender.send()
         bug_list = _BugFilter(**result.json()).bugs
-        return RunnerResult(self, _gen_summary_info(bug_list))
+        return _gen_summary_info(bug_list)
 
 
 ZenDaoProduct = Product

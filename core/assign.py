@@ -6,7 +6,7 @@ from core.execute import _runner
 
 
 @singledispatch
-def start(args, plugin):
+def start(args, plugin=None):
     """
     主运行函数
     :param args: 运行参数
@@ -20,7 +20,7 @@ def start(args, plugin):
 
 
 @start.register
-def _(args: None, plugins: List):
+def _(args: None, plugins: List=None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -28,7 +28,7 @@ def _(args: None, plugins: List):
 
 
 @start.register
-def _(args: int, plugins: List):
+def _(args: int, plugins: List=None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -36,7 +36,7 @@ def _(args: int, plugins: List):
 
 
 @start.register
-def _(args: str, plugins: List):
+def _(args: str, plugins: List=None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -44,7 +44,7 @@ def _(args: str, plugins: List):
 
 
 @start.register
-def _(args: list, plugins: List):
+def _(args: list, plugins: List=None):
     if len(args) == 0 or len(args) % 2 != 0:
         raise KeyError(_const.EXCEPTION.CheckRunningArgs % ('[]',))
     for item in args:

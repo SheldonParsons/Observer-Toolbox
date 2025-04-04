@@ -1,10 +1,8 @@
 from typing import Union
 
-from core._config import PluginPool
 from core.base import RunnerResult, Data, T
 from core import generator
-from core.generator import Monitor, ServicePlugin
-from core.root import BASE_DIR
+from core.generator import GenericServer, ServicePlugin, Parameter, Server, ServerRunner, PluginPool
 
 from servers import ZenDaoServer
 from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
@@ -97,7 +95,7 @@ class ReportPlugin4(ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-class GenericMonitor(Monitor):
+class GenericMonitor(GenericServer):
     source_name = "GenericMonitor--source_name-rewrite"
 
     def notice(self):
@@ -105,8 +103,33 @@ class GenericMonitor(Monitor):
         return "-----notice function-----"
 
 
+class GenericParameter(Parameter):
+
+    def __init__(self, name=None,
+                 *args, **kwargs):
+        self.name = name
+
+
+@ServerRunner(GenericParameter)
+class ListenTestServer(Server):
+
+    def __init__(self):
+        super().__init__()
+
+    def set_base_headers(self, *args, **kwargs) -> None:
+        pass
+
+    def tokenization(self) -> bool:
+        pass
+
+    def set_tokenization_headers(self):
+        pass
+
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+        return self.parameter.name
+
+
 def main_testing3():
-    print(BASE_DIR)
     report_plugin1 = ReportPlugin1()
     report_plugin2 = ReportPlugin2()
     report_plugin3 = ReportPlugin3()
@@ -115,7 +138,8 @@ def main_testing3():
     PluginPool.register(report_plugin3)
     GenericMonitor().notice()
     generator.start(["--zendao_username", "a80646", "--zendao_password", "Woaini^6636865", "--zendao_product_id", 1123,
-                     "--zendao_execution_id", 3572, "--zendao_bug_limit", 100], [ReportPlugin4()])
+                     "--zendao_execution_id", 3572, "--zendao_bug_limit", 100, "--name", "sheldon parsons"],
+                    [ReportPlugin4()])
 
 
 if __name__ == '__main__':

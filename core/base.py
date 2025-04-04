@@ -3,12 +3,9 @@ from typing import TypeVar, Generic, Union, List
 
 from core.monitor import MonitorBase
 from core.root import SourceType
-from core.utils import Sender, IndexingDict, HiddenDefaultDict
+from core.utils import Sender, IndexingDict, HiddenDefaultDict, HttpProtocolEnum
 
 T = TypeVar("T", bound=object)
-
-
-
 
 
 class Parameter:
@@ -44,8 +41,8 @@ class Server(ABC, metaclass=MonitorBase):
     source_name = None
     __restrict_init__ = True
 
-    def __init__(self, **kwargs):
-        self.sender = Sender(**kwargs)
+    def __init__(self, domain=None, protocol=HttpProtocolEnum.HTTP):
+        self.sender = Sender(domain, protocol)
         self.parameter: Union[Parameter, dict] = HiddenDefaultDict(None)
         self.initialize()
 

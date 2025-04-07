@@ -13,6 +13,7 @@ class HttpConfigException(HttpException):
     Http 参数错误
     """
 
+
 class HttpResponseException(HttpException):
     """
     Http 响应错误

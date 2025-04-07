@@ -58,6 +58,12 @@ class Server(ABC, metaclass=MonitorBase):
     def reset_sender(self, domain=None, protocol=None):
         self.sender = Sender(domain=domain or self.sender.domain, protocol=protocol or self.sender.protocol)
 
+    @classmethod
+    @abstractmethod
+    def ping(cls) -> bool:
+        """测试服务，请使用最小信息验证服务是否正常"""
+        pass
+
     @abstractmethod
     def set_base_headers(self, *args, **kwargs) -> None:
         pass

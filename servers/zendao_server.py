@@ -75,6 +75,10 @@ class Bug:
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
 
+    @classmethod
+    def ping(cls) -> bool:
+        pass
+
     def __init__(self):
         super().__init__(domain=os.getenv("ZENDAO_BASE_DOMAIN"), protocol=HttpProtocolEnum.HTTPS)
 

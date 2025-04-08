@@ -156,13 +156,17 @@ class ZenDaoServer(Server):
         class _BugFilter:
             def __init__(self, bugs, *args, **kwargs):
                 self.bugs = bugs
+        
+        class _TestTaskFilter:
+            def __init__(self, testtasks, *args, **kwargs):
+                self.testtasks = testtasks
 
         class _BugParams:
             def __init__(self, limit, status):
                 self.limit = limit
                 self.status = status
 
-        def _gen_summary_info(bug_list):
+        def _gen_bug_summary_info(bug_list):
             class ResultDict:
 
                 def __init__(self):
@@ -180,11 +184,24 @@ class ZenDaoServer(Server):
                     result_dict.severity_mapping[_self_bug.severity] += 1
                     result_dict.resolution_mapping[_self_bug.resolution] += 1
             return result_dict.__dict__
+        
+        def _gen_testtasks_summary_info(testtask_list):
+            matching_item = next((item for item in testtask_list if item.get("execution") == execution_id),None)
+            if matching_item:
+                return {"Begin": matching_item["begin"], "End": matching_item["end"]}
+            else:
+                print("没找到对应所属执行的测试单")
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
-        result: Response = self.sender.send()
-        bug_list = _BugFilter(**result.json()).bugs
-        return _gen_summary_info(bug_list)
+        bug_result: Response = self.sender.send()
+        bug_list = _BugFilter(**bug_result.json()).bugs
+        bug_info = _gen_bug_summary_info(bug_list)
+        self.sender.path = os.getenv("ZENDAO_TESTTASKS_LIST")
+        del self.sender.params["status"]
+        task_result: Response = self.sender.send()
+        testtask_list = _TestTaskFilter(**task_result.json()).testtasks
+        task_info = _gen_testtasks_summary_info(testtask_list)
+        return {"bug":bug_info,"task":task_info}
 
 
 ZenDaoProduct = Product

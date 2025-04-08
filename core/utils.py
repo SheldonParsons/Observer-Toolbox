@@ -192,6 +192,18 @@ class RunnerParameter:
         return self.args_mapping
 
 
+class DynamicObject:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            self.__dict__[key] = value
+            self.__annotations__[key] = type(value)
+
+    __annotations__ = {}
+
+    def __getattr__(self, name: str):
+        raise AttributeError(f"{self.__class__.__name__} 没有属性 '{name}'")
+
+
 class IndexingDict(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -24,6 +24,7 @@ def _core_const():
         fq.HTTP_PARAMS_NOT_SUPPORTED = "错误：请正确设置params参数信息，期望类型：dict，当前类型%s，当前值：%s"
         fq.HTTP_HEADERS_NOT_SUPPORTED = "错误：请正确设置headers参数信息，期望类型：dict，当前类型%s，当前值：%s"
         fq.Http_Login_Failed_Exception = "错误：登录失败，原因：%s"
+        fq.HTTP_Get_Task_Failed_Exception = "没找到对应所属执行的测试单：%s"
         return fq
 
     def __symbol():

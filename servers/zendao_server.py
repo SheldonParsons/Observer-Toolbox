@@ -188,7 +188,7 @@ class ZenDaoServer(Server):
         def _gen_testtasks_summary_info(testtask_list):
             matching_item = next((item for item in testtask_list if item.get("execution") == execution_id),None)
             if matching_item:
-                return {"begin": matching_item["begin"], "end": matching_item["end"]}
+                return {"begin": matching_item["begin"], "end": matching_item["end"], "executionName":matching_item["executionName"]}
             else:
                 print("没找到对应所属执行的测试单")
 
@@ -201,10 +201,7 @@ class ZenDaoServer(Server):
         task_result: Response = self.sender.send()
         testtask_list = _TestTaskFilter(**task_result.json()).testtasks
         task_info = _gen_testtasks_summary_info(testtask_list)
-        self.sender.path = os.getenv("ZENDAO_EXECUTION_DETAIL") % (str(execution_id),)
-        del self.sender.params["limit"]
-        execution_name = self.sender.send().json()["name"]
-        return {"bug":bug_info,"task":task_info,"execution_name":execution_name}
+        return {"bug":bug_info,"task":task_info}
 
 
 ZenDaoProduct = Product

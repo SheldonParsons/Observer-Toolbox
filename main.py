@@ -112,6 +112,8 @@ class GenericParameter(Parameter):
 
 @ServerRunner(GenericParameter)
 class ListenTestServer(Server):
+    def ping(cls):
+        pass
 
     def __init__(self):
         super().__init__()

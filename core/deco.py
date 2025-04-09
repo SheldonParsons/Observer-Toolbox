@@ -1,6 +1,6 @@
 import functools
 
-from core._config import PluginPool
+from core.generator import PluginPool
 from core.utils import IndexingDict
 
 server_stock = IndexingDict()

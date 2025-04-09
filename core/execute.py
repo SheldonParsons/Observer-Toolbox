@@ -2,7 +2,7 @@ from typing import Optional, Union, List
 
 import servers
 import inner_plugins
-from core._config import PluginPool
+from core.generator import PluginPool
 from core.deco import server_stock
 
 __all__ = ["servers", "inner_plugins"]

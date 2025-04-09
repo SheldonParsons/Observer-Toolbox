@@ -3,7 +3,7 @@ import threading
 import requests
 from collections import defaultdict
 from enum import Enum
-from typing import Union
+from typing import Union, List
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from core._config import _const
@@ -218,6 +218,16 @@ class IndexingDict(dict):
         super().__delitem__(key)
         self._keys.remove(key)
 
+    def sort(self, sort_list: List[str]):
+        """
+        重排序
+        :param sort_list:
+        :return:
+        """
+        order_index = {name: i for i, name in enumerate(sort_list)}
+        self._keys = sorted(self._keys, key=lambda x: order_index.get(x.__name__, float('inf')))
+        return self
+
     def get_key(self, index):
         return self._keys[index]
 
@@ -235,7 +245,7 @@ class IndexingDict(dict):
             self.__setitem__(k, v)
 
     def keys(self):
-        return self._keys.copy()
+        return self._keys
 
     def values(self):
         return [self[key] for key in self._keys]

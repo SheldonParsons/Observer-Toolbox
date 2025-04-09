@@ -4,6 +4,7 @@ from typing import List
 import dotenv
 import os
 
+import openpyxl
 from requests.models import Response
 
 from core._config import _const
@@ -11,6 +12,9 @@ from core._config._exception import HttpResponseException
 from core.deco import ServerRunner
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicObject
+from openpyxl import Workbook
+from openpyxl.styles import Alignment
+
 
 dotenv.load_dotenv()
 
@@ -160,6 +164,77 @@ class ZenDaoServer(Server):
             def __init__(self, limit, status):
                 self.limit = limit
                 self.status = status
+        
+        def export_zentaobugs(data, output_path="core/temp/bugs.xlsx"):
+            """导出禅道Bug数据到Excel文件
+            
+            Args:
+                data: Bug数据列表，每个元素为一个字典
+                output_path: 输出文件路径（默认：output/bugs.xlsx）
+            """
+            # 确保输出目录存在
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+
+            # 创建Excel工作簿
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "禅道Bug列表"
+
+            # 定义表头与字段映射关系
+            headers = [
+                ("Bug编号", "id", "无"),
+                ("Bug标题", "title", "无标题"),
+                ("严重程度", "severity", "未指定"),
+                ("优先级", "pri", "未指定"),
+                ("重现步骤", "steps", "无描述"),
+                ("bug状态", "status", "状态未知"),
+                ("由谁创建", "openedBy", "匿名用户"),
+                ("指派给", "assignedTo", "无指派"),
+                ("创建日期", "openedDate", "无日期")
+            ]
+
+            # 写入表头并设置格式
+            header_names = [h[0] for h in headers]
+            ws.append(header_names)
+            for col in ws[1]:
+                col.alignment = Alignment(horizontal='center', vertical='center')
+                col.font = openpyxl.styles.Font(bold=True)
+
+            # 处理并写入数据
+            for bug in data:
+                row = []
+                for header in headers:
+                    field_name = header[1]
+                    default_value = header[2]
+                    
+                    # 获取字段值并处理异常情况
+                    value = bug.get(field_name)
+                    if value in (None, "", []):
+                        value = default_value
+                    elif isinstance(value, list):
+                        value = "\n".join(map(str, value))
+                    row.append(str(value).strip() if value else default_value)
+
+                ws.append(row)
+
+            # 设置自动列宽（近似值）
+            for column in ws.columns:
+                max_length = 0
+                column = list(column)
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2) * 1.2
+                ws.column_dimensions[column[0].column_letter].width = adjusted_width
+
+            # 保存文件
+            wb.save(output_path)
+            print(f"成功导出Bug数据到：{os.path.abspath(output_path)}")
 
         def _gen_bug_summary_info(bug_list):
             class ResultDict:
@@ -173,11 +248,14 @@ class ZenDaoServer(Server):
                     self.total += (new_value - old_value)
 
             result_dict = ResultDict()
+            export_bug_list = []
             for bug in bug_list:
                 _self_bug = Bug(**bug)
                 if _self_bug.execution == execution_id:
                     result_dict.severity_mapping[_self_bug.severity] += 1
                     result_dict.resolution_mapping[_self_bug.resolution] += 1
+                    export_bug_list.append(bug)
+            export_zentaobugs(export_bug_list)
             return result_dict.__dict__
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__

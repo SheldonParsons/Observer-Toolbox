@@ -174,17 +174,20 @@ class ZenDaoServer(Server):
                     self.total += (new_value - old_value)
 
             result_dict = ResultDict()
+            bug_origin_data = []
             for bug in bug_list:
                 _self_bug = Bug(**bug)
                 if _self_bug.execution == execution_id:
                     result_dict.severity_mapping[_self_bug.severity] += 1
                     result_dict.resolution_mapping[_self_bug.resolution] += 1
-            return result_dict.__dict__
+                    bug_origin_data.append(bug)
+            return result_dict.__dict__,bug_origin_data
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
         bug_result: Response = self.sender.send()
         bug_list = _BugFilter(**bug_result.json()).bugs
-        return _gen_bug_summary_info(bug_list), bug_list
+        result_dict,bug_origin_data = _gen_bug_summary_info(bug_list)
+        return result_dict,bug_origin_data
 
     def get_task_info(self, execution_id):
         class _GetTask:

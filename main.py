@@ -134,15 +134,15 @@ class ListenTestServer(Server):
 
 
 def main_testing3():
-    report_plugin1 = ReportPlugin1()
-    report_plugin2 = ReportPlugin2()
-    report_plugin3 = ReportPlugin3()
-    PluginPool.register(report_plugin1)
-    PluginPool.register(report_plugin2)
-    PluginPool.register(report_plugin3)
+    # report_plugin1 = ReportPlugin1()
+    # report_plugin2 = ReportPlugin2()
+    # report_plugin3 = ReportPlugin3()
+    # PluginPool.register(report_plugin1)
+    # PluginPool.register(report_plugin2)
+    # PluginPool.register(report_plugin3)
     GenericMonitor().notice()
-    generator.start(["--zendao_username", "a80646", "--zendao_password", "Woaini^6636865", "--zendao_product_id", 1123,
-                     "--zendao_execution_id", 3572, "--zendao_bug_limit", 100, "--name", "sheldon parsons"],
+    generator.start([ "--zendao_product_id", 157,
+                     "--zendao_execution_id", 3587, "--zendao_bug_limit", 10000, "--name", "sheldon parsons"],
                     [ReportPlugin4()])
 
 

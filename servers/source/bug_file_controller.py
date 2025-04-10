@@ -49,7 +49,7 @@ def get_column_width(column):
         if cell.value:
             cell_width = sum(calculate_char_width(c) for c in str(cell.value).split('\n')[0])
             width_list.append(cell_width)
-    return max(*width_list) + 10
+    return max(width_list,default=10) + 10
 
 
 def html_to_text(html: str):

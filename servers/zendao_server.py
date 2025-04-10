@@ -168,6 +168,7 @@ class ZenDaoServer(Server):
                 def __init__(self):
                     self.severity_mapping = HiddenDefaultDict(int, self.update_total)
                     self.resolution_mapping = HiddenDefaultDict(int)
+                    self.postponed_bugs = {}
                     self.total = 0
 
                 def update_total(self, _, old_value, new_value):
@@ -180,6 +181,8 @@ class ZenDaoServer(Server):
                 if _self_bug.execution == execution_id:
                     result_dict.severity_mapping[_self_bug.severity] += 1
                     result_dict.resolution_mapping[_self_bug.resolution] += 1
+                    if _self_bug.resolution == 'postponed':
+                        result_dict.postponed_bugs[bug["id"]] = bug["title"]
                     bug_origin_data.append(bug)
             return result_dict.__dict__,bug_origin_data
 

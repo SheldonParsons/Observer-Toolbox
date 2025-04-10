@@ -142,7 +142,7 @@ def main_testing3():
     # PluginPool.register(report_plugin3)
     GenericMonitor().notice()
     generator.start([ "--zendao_product_id", 157,
-                     "--zendao_execution_id", 3587, "--zendao_bug_limit", 10000, "--name", "sheldon parsons"],
+                     "--zendao_execution_id", 3568, "--zendao_bug_limit", 10000, "--name", "sheldon parsons"],
                     [ReportPlugin4()])
 
 

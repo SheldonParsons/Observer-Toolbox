@@ -223,10 +223,10 @@ class ZenDaoServer(Server):
 
         # 获取BUG列表信息
         bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id)
-        # 创建BUG文件
-        generate_bug_file(os.getenv("ZENDAO_BUG_FILE_NAME"), bug_origin_data)
         # 获取任务列表信息
         task_info = self.get_task_info(execution_id)
+        # 创建BUG文件
+        generate_bug_file(task_info["executionName"].replace(" ", "")+"_"+os.getenv("ZENDAO_BUG_FILE_NAME"), bug_origin_data)
         return DynamicObject(bug=bug_info, task=task_info).__dict__
 
 

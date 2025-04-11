@@ -25,8 +25,8 @@ class BugFileStream:
         self.headers = [self._ColumnBaseInfo(*header) for header in bug_fields]
 
     def dir_exist_check(self):
-        if self.dir and not os.path.exists(self.dir):
-            os.makedirs(self.dir, exist_ok=True)
+        if self.path.parent and not os.path.exists(self.path.parent):
+            os.makedirs(self.path.parent, exist_ok=True)
 
     def __enter__(self):
         self.dir_exist_check()

@@ -1,8 +1,12 @@
+import os
+import shutil
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Union, List
 
+from core._config import _const
+from core._config._exception import TempFileTypeException, FileControlException, FileException
 from core.monitor import MonitorBase
-from core.root import SourceType
+from core.root import SourceType, get_base_dir
 from core.utils import Sender, IndexingDict, HiddenDefaultDict, HttpProtocolEnum
 
 T = TypeVar("T", bound=object)
@@ -12,6 +16,17 @@ class Parameter:
 
     def __getattr__(self, item):
         return None
+
+
+class SystemParameters(Parameter):
+
+    def __init__(self, clean_temp_files: str = '1', kdocs_files_path: Union[str, List] = None, *args, **kwargs):
+        try:
+            is_clean_temp_files = True if int(clean_temp_files) == 1 else False
+        except TypeError:
+            is_clean_temp_files = True
+        self.clean_temp_files = is_clean_temp_files
+        self.kdocs_files_path = kdocs_files_path
 
 
 class RunnerResult:
@@ -135,3 +150,38 @@ class ServerStock(Generic[ServerType]):
             return server_instance
         except IndexError:
             raise StopIteration
+
+
+class SystemContext:
+
+    def __init__(self, clean_temp_files_on_end: bool = True) -> None:
+        self.path = get_base_dir()
+        self.clean_temp_files_on_end = clean_temp_files_on_end
+
+    def _safe_clear_directory(self):
+        try:
+            if not os.path.exists(self.path):
+                os.makedirs(self.path, exist_ok=True)
+            if not os.path.isdir(self.path):
+                raise TempFileTypeException(_const.EXCEPTION.TEMP_FILE_NOT_FOUND_Exception % (str(self.path),))
+
+            for entry in os.listdir(self.path):
+                path = os.path.join(self.path, entry)
+                try:
+                    if os.path.isfile(path) or os.path.islink(path):
+                        os.unlink(path)
+                    elif os.path.isdir(path):
+                        shutil.rmtree(path)
+                except Exception as e:
+                    raise FileControlException(_const.EXCEPTION.TEMP_File_Control_Exception % (path, str(e),))
+
+        except Exception as e:
+            raise FileException(_const.EXCEPTION.Contxt_Exception % (str(e),))
+
+    def __enter__(self):
+        self._safe_clear_directory()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.clean_temp_files_on_end:
+            self._safe_clear_directory()

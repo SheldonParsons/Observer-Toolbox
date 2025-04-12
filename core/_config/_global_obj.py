@@ -43,6 +43,7 @@ class _GlobalData:
     def __init__(self):
         self._lock = threading.Lock()
         self._data: Dict[str, T] = {}
+        self.system_parameters = None
         self._version = 0  # 数据版本标识
 
     def set_data(self, value: Dict[str, T]) -> None:

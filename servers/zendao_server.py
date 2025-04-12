@@ -1,4 +1,5 @@
 from enum import Enum
+from pprint import pprint
 from typing import List
 
 import dotenv
@@ -11,6 +12,7 @@ from core._config._exception import HttpResponseException
 from core.deco import ServerRunner
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicObject
+from core.async_server import AsyncServerController
 from servers.source.bug_file_controller import generate_bug_file
 
 dotenv.load_dotenv()
@@ -68,10 +70,12 @@ class Execution:
 
 
 class Bug:
-    def __init__(self, severity=None, resolution=None, execution=None, *args, **kwargs):
+    def __init__(self, severity=None, resolution=None, execution=None, id=None, title=None, *args, **kwargs):
         self.severity = severity
         self.resolution = resolution
         self.execution = execution
+        self.id = id
+        self.title = title
 
 
 @ServerRunner(ZenDaoParameter)
@@ -176,21 +180,20 @@ class ZenDaoServer(Server):
 
             result_dict = ResultDict()
             bug_origin_data = []
-            for bug in bug_list:
-                _self_bug = Bug(**bug)
-                if _self_bug.execution == execution_id:
-                    result_dict.severity_mapping[_self_bug.severity] += 1
-                    result_dict.resolution_mapping[_self_bug.resolution] += 1
-                    if _self_bug.resolution == 'postponed':
-                        result_dict.postponed_bugs[bug["id"]] = bug["title"]
-                    bug_origin_data.append(bug)
-            return result_dict.__dict__,bug_origin_data
+            for bug_data in bug_list:
+                bug = Bug(**bug_data)
+                if bug.execution == execution_id:
+                    result_dict.severity_mapping[bug.severity] += 1
+                    result_dict.resolution_mapping[bug.resolution] += 1
+                    if bug.resolution == 'postponed':
+                        result_dict.postponed_bugs[bug.id] = bug.title
+                    bug_origin_data.append(bug_data)
+            return result_dict.__dict__, bug_origin_data
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
         bug_result: Response = self.sender.send()
         bug_list = _BugFilter(**bug_result.json()).bugs
-        result_dict,bug_origin_data = _gen_bug_summary_info(bug_list)
-        return result_dict,bug_origin_data
+        return _gen_bug_summary_info(bug_list)
 
     def get_task_info(self, execution_id):
         class _GetTask:
@@ -218,6 +221,9 @@ class ZenDaoServer(Server):
         return _GetTask(**task_result.json()).get_task()
 
     def run(self, *args, **kwargs):
+        # 借个地方做测试，嘻嘻
+        # save_path_list = AsyncServerController().generator_files()
+        # pprint(save_path_list)
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
 
@@ -226,7 +232,8 @@ class ZenDaoServer(Server):
         # 获取任务列表信息
         task_info = self.get_task_info(execution_id)
         # 创建BUG文件
-        generate_bug_file(task_info["executionName"].replace(" ", "")+"_"+os.getenv("ZENDAO_BUG_FILE_NAME"), bug_origin_data)
+        generate_bug_file(task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
+                          bug_origin_data)
         return DynamicObject(bug=bug_info, task=task_info).__dict__
 
 

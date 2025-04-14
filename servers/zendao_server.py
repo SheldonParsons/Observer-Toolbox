@@ -222,11 +222,10 @@ class ZenDaoServer(Server):
 
     def run(self, *args, **kwargs):
         # 借个地方做测试，嘻嘻
-        save_path_list = AsyncServerController().generator_files()
+        save_path_list = AsyncServerController().generator_files(path="kkk/eee")
         pprint(save_path_list)
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
-
         # 获取BUG列表信息
         bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id)
         # 获取任务列表信息

@@ -4,7 +4,7 @@ import asyncio
 import aiofiles
 import os
 import re
-from typing import Union, List, Optional, Callable, TypeVar
+from typing import Union, List, Optional, Callable
 from urllib.parse import urlparse, parse_qs, unquote
 from asyncio import Semaphore
 from pathlib import Path
@@ -34,15 +34,21 @@ class AsyncServerController:
             r'(?::\d+)?'
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.customer_extract_func = None
+        self.second_path = Path("")
 
     def generator_files(self, server_type: DownloadServerType = DownloadServerType.K_DOCS,
-                        customer_extract_func: Callable[[str, ...], str] = None) -> tuple[BaseException | str]:
+                        customer_extract_func: Callable[[str, ...], str] = None, path: Union[Path, str] = Path("")) -> \
+            tuple[BaseException | str]:
         """
         下载并生成文件任务
         :param server_type: 需要下载的服务类型，当前仅提供kdocs
         :param customer_extract_func: 自定义URL中解析文件名的回调函数
+        :param path: 以core/temp为根路径下的二级路径
+            e.g.:(1) "abc/edf" 以【/】分割路径，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
+            e.g.:(2) pathlib.Path("abc/edf")，将Path对象与根路径结合，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
         :return: 下载文件保存的路径列表
         """
+        self.second_path = path
         self.customer_extract_func = customer_extract_func
         from core.generator import GlobalData
         urls_data = GlobalData.system_parameters.__dict__[server_type.value]
@@ -63,7 +69,7 @@ class AsyncServerController:
         async with self.semaphore:
             try:
                 filename = self._extract_filename(url) or self._fallback_filename(url)
-                save_path = self._get_unique_path(filename)
+                save_path = await self._get_unique_path(filename)
 
                 async with session.get(url) as response:
                     response.raise_for_status()
@@ -108,16 +114,32 @@ class AsyncServerController:
             raise report_exception.FileException(f"文件名解析失败 [{url}]: {str(e)}")
         return None
 
-    def _get_unique_path(self, filename: str) -> Path:
-        """生成唯一文件路径"""
-        counter = 1
+    async def _get_unique_path(self, filename: str) -> Path:
+        """生成唯一路径并原子性预留文件（协程安全）"""
+        second_path = Path(self.second_path) if self.second_path else Path()
+
+        if second_path.is_absolute():
+            second_path = Path(*second_path.parts[1:])  # 移除绝对路径的根目录
+
+        base_dir = self.save_dir / second_path
         base_name, ext = os.path.splitext(filename)
-        path = self.save_dir / filename
-        while path.exists():
-            new_name = f"{base_name}_{counter}{ext}"
-            path = self.save_dir / new_name
-            counter += 1
-        return path
+
+        counter = 0
+        while True:
+            new_name = f"{base_name}_{counter}{ext}" if counter > 0 else filename
+            path = base_dir / new_name
+
+            try:
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(None, lambda: path.parent.mkdir(parents=True, exist_ok=True))
+
+                async with aiofiles.open(path, "xb") as f:  # 'x' 表示独占创建模式
+                    pass
+
+                return path
+
+            except FileExistsError:
+                counter += 1
 
     def _process_http_urls(self, urls_data: Union[str, List[str]]) -> List[str]:
         """处理并验证URL输入"""

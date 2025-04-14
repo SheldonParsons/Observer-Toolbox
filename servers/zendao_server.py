@@ -222,8 +222,8 @@ class ZenDaoServer(Server):
 
     def run(self, *args, **kwargs):
         # 借个地方做测试，嘻嘻
-        # save_path_list = AsyncServerController().generator_files()
-        # pprint(save_path_list)
+        save_path_list = AsyncServerController().generator_files()
+        pprint(save_path_list)
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
 

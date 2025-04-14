@@ -1,4 +1,5 @@
 from core._config import _PluginPool as PluginPool, _GlobalData as GlobalData
+from core._config import _exception as report_exception
 from core.base import ServerPlugin as ServicePlugin, Server, Parameter
 from core.deco import ServerRunner
 from core.monitor import GenericMonitor as GenericServer
@@ -13,4 +14,5 @@ __all__ = [
     'Server',
     'Parameter',
     'ServerRunner',
+    'report_exception'
 ]

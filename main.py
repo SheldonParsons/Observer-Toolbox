@@ -147,6 +147,11 @@ def main_testing3():
                      "/Users/sheldon/Documents/GithubProject/TestReport/kdocs_urls.txt"],
                     [ReportPlugin4()])
 
-
+def main_testingdd():
+    GenericMonitor().notice()
+    generator.start(["--kdocs_files_path",
+                     "F:\Gree\github\TestReport\FMS0330测试用例.txt"],
+                    [ReportPlugin4()])
 if __name__ == '__main__':
-    main_testing3()
+    # main_testing3()
+    main_testingdd()

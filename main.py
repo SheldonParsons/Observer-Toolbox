@@ -144,7 +144,7 @@ def main_testing3():
     generator.start(["--zendao_product_id", 157,
                      "--zendao_execution_id", 3568, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2, "--kdocs_files_path",
-                     "/Users/sheldon/Documents/GithubProject/TestReport/kdocs_urls.txt"],
+                     "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/kdocs_urls.txt","--close_inner_all", 1],
                     [ReportPlugin4()])
 
 

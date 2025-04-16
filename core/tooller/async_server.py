@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 import aiohttp
 import asyncio
@@ -37,7 +38,8 @@ class AsyncServerController:
         self.second_path = Path("")
 
     def generator_files(self, server_type: DownloadServerType = DownloadServerType.K_DOCS,
-                        customer_extract_func: Callable[[str, ...], str] = None, path: Union[Path, str] = Path("")) -> \
+                        customer_extract_func: Callable[[str, ...], Union[str, None]] = None,
+                        path: Union[Path, str] = Path("")) -> \
             tuple[BaseException | str]:
         """
         下载并生成文件任务
@@ -46,7 +48,7 @@ class AsyncServerController:
         :param path: 以core/temp为根路径下的二级路径
             e.g.:(1) "abc/edf" 以【/】分割路径，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
             e.g.:(2) pathlib.Path("abc/edf")，将Path对象与根路径结合，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
-        :return: 下载文件保存的路径列表
+        :return: 下载文件保存的路径以及下载任务异常集成的列表
         """
         self.second_path = path
         self.customer_extract_func = customer_extract_func
@@ -68,11 +70,10 @@ class AsyncServerController:
         """单个下载任务协程"""
         async with self.semaphore:
             try:
-                filename = self._extract_filename(url) or self._fallback_filename(url)
-                save_path = await self._get_unique_path(filename)
-
                 async with session.get(url) as response:
                     response.raise_for_status()
+                    filename = self._extract_filename(url) or self._fallback_filename(url)
+                    save_path = await self._get_unique_path(filename)
                     await self._stream_to_file(response, save_path)
                     return str(save_path)
             except aiohttp.ClientError as e:
@@ -131,7 +132,8 @@ class AsyncServerController:
 
             try:
                 loop = asyncio.get_running_loop()
-                await loop.run_in_executor(None, lambda: path.parent.mkdir(parents=True, exist_ok=True))
+                io_executor = ThreadPoolExecutor(max_workers=4)
+                await loop.run_in_executor(io_executor, lambda: path.parent.mkdir(parents=True, exist_ok=True))
 
                 async with aiofiles.open(path, "xb") as f:  # 'x' 表示独占创建模式
                     pass

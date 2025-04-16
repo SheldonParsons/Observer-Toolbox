@@ -20,12 +20,25 @@ class Parameter:
 
 class SystemParameters(Parameter):
 
-    def __init__(self, clean_temp_files: str = '1', kdocs_files_path: Union[str, List] = None, *args, **kwargs):
-        try:
-            is_clean_temp_files = True if int(clean_temp_files) == 1 else False
-        except TypeError:
-            is_clean_temp_files = True
-        self.clean_temp_files = is_clean_temp_files
+    def __init__(
+            self,
+            clean_temp_files: str = '1',
+            kdocs_files_path: Union[str, List] = None,
+            close_inner_all: str = '2',
+            *args,
+            **kwargs
+    ):
+        def parse_bool_param(param, default=False) -> bool:
+            try:
+                if isinstance(param, bool):
+                    return param
+                return str(param).strip() == '1'
+            except (TypeError, ValueError, AttributeError):
+                return default
+
+        # 参数处理解耦
+        self.clean_temp_files = parse_bool_param(clean_temp_files, default=True)
+        self.close_inner_all = parse_bool_param(close_inner_all, default=False)
         self.kdocs_files_path = kdocs_files_path
 
 

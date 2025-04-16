@@ -33,6 +33,9 @@ class _PluginPool:
     def get_plugins(self):
         return self.plugins
 
+    def set_plugins(self, plugins):
+        self.plugins = plugins
+
 
 def _get_plugin_pool() -> _PluginPool:
     return _PluginPool()
@@ -82,6 +85,6 @@ def _get_global_data() -> _GlobalData:
     return _GlobalData()
 
 
-_PluginPool = _get_plugin_pool()
+_PluginPool:_PluginPool = _get_plugin_pool()
 
-_GlobalData = _get_global_data()
+_GlobalData:_GlobalData = _get_global_data()

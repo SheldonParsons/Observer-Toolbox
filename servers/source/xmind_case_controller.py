@@ -5,6 +5,8 @@
 # Description：
 import os,zipfile
 from xmindparser import xmind_to_dict
+from core.root import  get_base_dir
+
 
 def xmind_dict(filename):
     dict_data = xmind_to_dict(filename)
@@ -56,6 +58,9 @@ def statistics_case(case_data):
 
 def sum_statistics_data(directory,zipname):
     '''输出格式:本次版本设计了 1210 条用例，通过了 1210个用例，失败了0个用例，通过率 100%'''
+    # directory=[r"F:\Gree\格力钱包\2025\0330\调账昵称.xmind"]#测试用
+    dir = get_base_dir()
+    path = dir / zipname
     print(f"侍处理文件地址{directory}")
     new_addition_data=0
     passed_count=0
@@ -84,7 +89,7 @@ def sum_statistics_data(directory,zipname):
     print(f'本次未执行用例数{unexecuted_count}')
     case_result=f'本次版本设计了 {new_addition_data} 条用例，通过了 {passed_count}个用例，失败了{failed_count}个用例，通过率 {pass_rate}'
     #压缩xmind
-    zip_xmindpath=zipname
+    zip_xmindpath=path
     zip_path=zip_xmindfile(case_list,zip_xmindpath)
     return case_result, zip_path
 
@@ -100,7 +105,8 @@ def zip_xmindfile(case_list,output_path):
 
 def test_001():
     directory=[r"F:\Gree\格力钱包\2025\0330\调账昵称.xmind"]
-    result=sum_statistics_data(directory,"售后0330用例")
+    zip_path="F:\\Gree\\github\\TestReport\\core\\temp/测试报告.zip"
+    result=sum_statistics_data(directory,zip_path)
     print(result)
 if __name__ == '__main__':
     test_001()

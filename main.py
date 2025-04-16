@@ -147,11 +147,33 @@ def main_testing3():
                      "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/kdocs_urls.txt","--close_inner_all", 1],
                     [ReportPlugin4()])
 
+class ReportPlugindd(ServicePlugin):
+
+    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+        print("run plugin dd")
+        return "result plugin dd"
+
+    def get_notify(self, data: Data):
+        print("*" * 10 + "ReportPlugindd Monitor" + "*" * 10)
+        print(f"method_name: {data.method_name}")
+        print(f"obj:{data.obj}")
+        print(f"data:{data.result}")
+        result: RunnerResult = data.result
+        print(f"source_name:{result.source_name}")
+        print(f"source_type:{result.source_type}")
+        print(f"get_data():{result.get_data()}")
+        if result.source_name=='ZenDaoServer':
+            from core.generator import GlobalData
+            GlobalData.system_parameters.__dict__['taskinfo']=result.get_data()['task']
+            print(f"taskinfo:{GlobalData.system_parameters.__dict__['taskinfo']}")
+
 def main_testingdd():
     GenericMonitor().notice()
-    generator.start(["--kdocs_files_path",
-                     "F:\Gree\github\TestReport\FMS0330测试用例.txt"],
-                    [ReportPlugin4()])
+    generator.start(["--zendao_product_id", 157,
+                     "--zendao_execution_id", 3568, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
+                     "--clean_temp_files", 2,
+                     "--kdocs_files_path",
+                     r"F:\Gree\github\TestReport\FMS0330测试用例.txt"])
 if __name__ == '__main__':
     # main_testing3()
     main_testingdd()

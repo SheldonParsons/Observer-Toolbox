@@ -30,7 +30,7 @@ class BugFileStream:
 
     def __enter__(self):
         self.dir_exist_check()
-        return self.work_book, self.work_sheet, self.headers
+        return self.work_book, self.work_sheet, self.headers, self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.work_book.save(self.path)
@@ -49,7 +49,7 @@ def get_column_width(column):
         if cell.value:
             cell_width = sum(calculate_char_width(c) for c in str(cell.value).split('\n')[0])
             width_list.append(cell_width)
-    return max(width_list,default=10) + 10
+    return max(width_list, default=10) + 10
 
 
 def html_to_text(html: str):
@@ -71,8 +71,8 @@ def process_value(value, h: BugFileStream._ColumnBaseInfo):
     return value
 
 
-def generate_bug_file(file_name, row_data: List[dict]) -> None:
-    with BugFileStream(file_name) as (work_book, work_sheet, headers):
+def generate_bug_file(file_name, row_data: List[dict]) -> str:
+    with BugFileStream(file_name) as (work_book, work_sheet, headers, context):
         # 添加表头
         work_sheet.append([h.header_name for h in headers])
         # 给表头设定特殊样式
@@ -88,3 +88,4 @@ def generate_bug_file(file_name, row_data: List[dict]) -> None:
         for column in work_sheet.columns:
             width = get_column_width(column)
             work_sheet.column_dimensions[column[0].column_letter].width = width
+        return str(context.path)

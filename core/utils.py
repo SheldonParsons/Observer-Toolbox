@@ -1,9 +1,11 @@
 import functools
 import threading
+
+import ijson
 import requests
 from collections import defaultdict
 from enum import Enum
-from typing import Union, List
+from typing import Union, List, Callable
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from core._config import _const
@@ -45,6 +47,15 @@ class Sender:
         self._headers = {}
         self._protocol = protocol or HttpProtocolEnum.HTTP
         self._result = None
+        self._stream = False
+
+    @property
+    def stream(self):
+        return self._stream
+
+    @stream.setter
+    def stream(self, value):
+        self._stream = value
 
     @property
     def result(self):
@@ -138,7 +149,8 @@ class Sender:
         return urljoin(self._protocol.value + self._domain, self._path)
 
     def send(self, method=None, domain=None, path=None, params=None, data=None, json=None, headers=None,
-             protocol=None) -> requests.models.Response:
+             protocol=None, stream=False, filter_callback: Union[Callable[[dict], List]] = lambda x: x,
+             target: str = None) -> Union[requests.models.Response, List]:
         self.method = method or self._method
         self.domain = domain or self.domain
         self.path = path or self.path
@@ -147,9 +159,14 @@ class Sender:
         self.json = json or self.json
         self.headers = headers or self.headers
         self.protocol = protocol or self.protocol
+        self.stream = stream
         self.result = self.session.request(self.method, self._get_url(), params=self.params, data=self.data,
                                            json=self.json,
-                                           headers=self.headers)
+                                           headers=self.headers, stream=stream)
+        if self.stream:
+            self.result.raw.decode_content = True
+            bugs_generator = ijson.items(self.result.raw, target)
+            return [bug for bug in bugs_generator if filter_callback(bug)]
         return self.result
 
 
@@ -195,13 +212,20 @@ class RunnerParameter:
 class DynamicObject:
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
-            self.__dict__[key] = self.__class__(**value) if isinstance(value, dict) else value
-            self.__annotations__[key] = type(value)
+            str_key = str(key) if not isinstance(key, str) else key
+            if isinstance(value, dict):
+                sanitized_dict = {str(k): v for k, v in value.items()}
+                self.__dict__[str_key] = DynamicObject(**sanitized_dict)
+            else:
+                self.__dict__[str_key] = value
 
     __annotations__ = {}
 
     def __getattr__(self, name: str):
         raise AttributeError(f"{self.__class__.__name__} 没有属性 '{name}'")
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 class IndexingDict(dict):

@@ -169,12 +169,12 @@ class ReportPlugindd(ServicePlugin):
             GlobalData.system_parameters.__dict__['taskinfo']=result.get_data()['task']
             print(f"taskinfo:{GlobalData.system_parameters.__dict__['taskinfo']}")
 
-def main_testingdd():
+def main_testing():
     GenericMonitor().notice()
     generator.start(["--zendao_product_id", 157,
-                     "--zendao_execution_id", 3568, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
+                     "--zendao_execution_id", 3587, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
                      "--kdocs_files_path",
                      str(Path(BASE_DIR) / "kdocs_urls.txt")])
 if __name__ == '__main__':
-    main_testingdd()
+    main_testing()

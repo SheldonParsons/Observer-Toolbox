@@ -182,33 +182,27 @@ class ZenDaoServer(Server):
             bug_origin_data = []
             for bug_data in bug_list:
                 bug = Bug(**bug_data)
-                if bug.execution == execution_id:
-                    result_dict.severity_mapping[bug.severity] += 1
-                    result_dict.resolution_mapping[bug.resolution] += 1
-                    if bug.resolution == 'postponed':
-                        result_dict.postponed_bugs[bug.id] = bug.title
-                    bug_origin_data.append(bug_data)
+                result_dict.severity_mapping[bug.severity] += 1
+                result_dict.resolution_mapping[bug.resolution] += 1
+                if bug.resolution == 'postponed':
+                    result_dict.postponed_bugs[bug.id] = bug.title
+                bug_origin_data.append(bug_data)
             return result_dict.__dict__, bug_origin_data
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
-        bug_result: Response = self.sender.send()
-        bug_list = _BugFilter(**bug_result.json()).bugs
+        filtered_bugs: List = self.sender.send(stream=True,
+                                               filter_callback=lambda bug: bug["execution"] == execution_id,
+                                               target="bugs.item")
+        bug_list = _BugFilter(filtered_bugs).bugs
         return _gen_bug_summary_info(bug_list)
 
     def get_task_info(self, execution_id):
         class _GetTask:
 
-            def __init__(self, testtasks: List, *args, **kwargs):
-                def _get_task():
-                    for task in testtasks:
-                        task = DynamicObject(**task)
-                        if task.execution == execution_id:
-                            return task.__dict__
-
-                self.begin = None
-                self.end = None
-                self.executionName = None
-                self.__dict__.update({k: v for k, v in _get_task().items() if k in self.__dict__})
+            def __init__(self, begin=None, end=None, executionName=None, *args, **kwargs):
+                self.begin = begin
+                self.end = end
+                self.executionName = executionName
 
             def get_task(self):
                 if None in (self.begin, self.end, self.executionName):
@@ -217,8 +211,10 @@ class ZenDaoServer(Server):
 
         self.sender.path = os.getenv("ZENDAO_TESTTASKS_LIST")
         del self.sender.params["status"]
-        task_result: Response = self.sender.send()
-        return _GetTask(**task_result.json()).get_task()
+        filter_tasks: List = self.sender.send(stream=True,
+                                              filter_callback=lambda bug: bug["execution"] == execution_id,
+                                              target="testtasks.item")
+        return _GetTask(**filter_tasks[0]).get_task()
 
     def run(self, *args, **kwargs):
         # 借个地方做测试，嘻嘻

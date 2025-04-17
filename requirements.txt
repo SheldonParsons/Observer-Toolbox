@@ -4,3 +4,4 @@ openpyxl==3.1.5
 aiohttp==3.11.16
 aiofiles==24.1.0
 xmindparser==1.0.9
+ijson==3.3.0

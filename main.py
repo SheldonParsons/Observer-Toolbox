@@ -1,8 +1,10 @@
+from pathlib import Path
 from typing import Union
 
 from core.base import RunnerResult, Data, T
 from core import generator
 from core.generator import GenericServer, ServicePlugin, Parameter, Server, ServerRunner, PluginPool
+from core.root import BASE_DIR
 
 from servers import ZenDaoServer
 from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
@@ -173,7 +175,6 @@ def main_testingdd():
                      "--zendao_execution_id", 3568, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
                      "--kdocs_files_path",
-                     r"F:\Gree\github\TestReport\FMS0330测试用例.txt"])
+                     str(Path(BASE_DIR) / "kdocs_urls.txt")])
 if __name__ == '__main__':
-    # main_testing3()
     main_testingdd()

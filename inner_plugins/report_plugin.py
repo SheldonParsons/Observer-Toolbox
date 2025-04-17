@@ -20,7 +20,3 @@ class ReportPlugin(ServicePlugin):
         print(f"source_name:{result.source_name}")
         print(f"source_type:{result.source_type}")
         print(f"get_data():{result.get_data()}")
-        rusult_data = result.get_data()
-        if result.source_name=='ZenDaoServer' and rusult_data:
-            from core.generator import GlobalData
-            GlobalData.system_parameters.__dict__['taskinfo']=rusult_data['task']

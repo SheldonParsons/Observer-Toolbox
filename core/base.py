@@ -18,6 +18,12 @@ class Parameter:
         return None
 
 
+class EmptyParameter(Parameter):
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+
 class SystemParameters(Parameter):
 
     def __init__(

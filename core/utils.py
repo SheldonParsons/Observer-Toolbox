@@ -195,7 +195,7 @@ class RunnerParameter:
 class DynamicObject:
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
-            self.__dict__[key] = value
+            self.__dict__[key] = self.__class__(**value) if isinstance(value, dict) else value
             self.__annotations__[key] = type(value)
 
     __annotations__ = {}

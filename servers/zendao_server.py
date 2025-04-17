@@ -234,7 +234,7 @@ class ZenDaoServer(Server):
         bug_file_path = generate_bug_file(
             task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
             bug_origin_data)
-        return DynamicObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path).__dict__
+        return DynamicObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
 
 
 ZenDaoProduct = Product

@@ -16,8 +16,9 @@ class XmindPlugin(ServicePlugin):
         # TODO:暂时改为循环读取指定路径
         self.xmind_file_path = [Path(BASE_DIR) / "xmindcase" / "调账昵称.xmind",
                                 Path(BASE_DIR) / "xmindcase" / "调账昵称2.xmind"]
-        case_result = analyze_xmind(self.xmind_file_path, self.executionName + "_" + os.getenv("XMIND_CASE_ZIP_NAME"))
-        print(f"case_result:{case_result.__dict__}")
+        case_result = analyze_xmind(self.xmind_file_path,
+                                    '_'.join([self.executionName, os.getenv("XMIND_CASE_ZIP_NAME_SUFFIX")]))
+        print(f"case_result:{case_result}")
         return DynamicObject(case_result=case_result)
 
     def get_notify(self, data: Data):

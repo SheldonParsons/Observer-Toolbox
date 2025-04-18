@@ -4,6 +4,7 @@ import threading
 import ijson
 import requests
 from collections import defaultdict
+from collections.abc import Mapping
 from enum import Enum
 from typing import Union, List, Callable
 from requests.adapters import HTTPAdapter
@@ -209,7 +210,27 @@ class RunnerParameter:
         return self.args_mapping
 
 
-class DynamicObject:
+class DynamicObject(Mapping):
+    def __getitem__(self, key):
+        str_key = str(key)
+        if str_key in self.__dict__:
+            value = self.__dict__[str_key]
+            # if isinstance(value, DynamicObject):
+            #     return dict(value)
+            return value
+        else:
+            raise KeyError(f"Key '{key}' not found")
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __iter__(self):
+        for key, value in self.__dict__.items():
+            if isinstance(value, DynamicObject):
+                yield key, dict(value)
+            else:
+                yield key, value
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             str_key = str(key) if not isinstance(key, str) else key
@@ -226,6 +247,17 @@ class DynamicObject:
 
     def __repr__(self):
         return str(self.__dict__)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return [(_ := lambda value: dict(value) if isinstance(value, DynamicObject) else value)(value) for value in
+                self.__dict__.values()]
+
+    def items(self):
+        """ 返回键值对视图（可选） """
+        return self.__dict__.items()
 
 
 class IndexingDict(dict):

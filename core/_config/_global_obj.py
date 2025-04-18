@@ -31,6 +31,10 @@ class _PluginPool:
         self.plugins.append(plugin)
 
     def get_plugins(self):
+        import inner_plugins
+        sort_list = getattr(inner_plugins, '__all__', None) or []
+        order_map = {name: index for index, name in enumerate(sort_list)}
+        self.plugins.sort(key=lambda p: order_map.get(type(p).__name__, float('inf')))
         return self.plugins
 
     def set_plugins(self, plugins):

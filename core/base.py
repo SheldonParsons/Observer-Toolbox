@@ -154,7 +154,7 @@ class ServerStock(Generic[ServerType]):
     def __init__(self, stock: IndexingDict, args_mapping) -> None:
         import servers
         self.current = 0
-        self.stock = stock.sort(servers.__all__)
+        self.stock = stock.sort(getattr(servers, '__all__', None)) or stock
         self.args_mapping = args_mapping
 
     def __iter__(self):

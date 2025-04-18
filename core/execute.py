@@ -23,7 +23,7 @@ def _runner(args: Optional[Union[List[Union[str, int]]]], plugins: List[ServiceP
 
 def clean_inner_observers():
     for key in server_stock.keys():
-        if key.__name__ in servers.__all__:
+        if key.__name__ in getattr(servers, '__all__', None) or []:
             del server_stock[key]
     PluginPool.set_plugins(
-        [plugin for plugin in PluginPool.get_plugins() if type(plugin).__name__ not in inner_plugins.__all__])
+        [plugin for plugin in PluginPool.get_plugins() if type(plugin).__name__ not in getattr(inner_plugins, '__all__', None) or []])

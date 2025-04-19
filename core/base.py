@@ -49,25 +49,74 @@ class SystemParameters(Parameter):
 
 
 class RunnerResult:
+    __slots__ = ('source_type', 'source_name', '_data', '_initialized')
 
     def __init__(self, source_object: Union['Server', 'Plugin'], data=None):
+        super().__setattr__('_initialized', False)
         self.source_type = getattr(source_object, 'source_type', None) or str(type(source_object))
         self.source_name = getattr(source_object, 'source_name', None) or source_object.__class__.__name__
-        self.data = data
+        self._data = data
+        super().__setattr__('_initialized', True)
 
     def get_data(self):
-        return self.data
+        return self._data
 
-    def set_data(self, data):
-        self.data = data
+    def __setattr__(self, name, value):
+        if getattr(self, '_initialized', False):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            super().__setattr__(name, value)
+
+    def __delattr__(self, name):
+        if hasattr(self, name):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __setitem__(self, key, value):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __delitem__(self, key):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
 
 
 class Data:
+    __slots__ = ('result', 'obj', 'method_name', '_initialized')
 
     def __init__(self, obj, data, method_name):
+        super().__setattr__('_initialized', False)
         self.result: RunnerResult = data
         self.obj = obj
         self.method_name = method_name
+        super().__setattr__('_initialized', True)
+
+    def __setattr__(self, name, value):
+        if getattr(self, '_initialized', False):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            super().__setattr__(name, value)
+
+    def __delattr__(self, name):
+        if hasattr(self, name):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __setitem__(self, key, value):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __delitem__(self, key):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
 
 
 class Server(ABC, metaclass=MonitorBase):
@@ -154,7 +203,7 @@ class ServerStock(Generic[ServerType]):
     def __init__(self, stock: IndexingDict, args_mapping) -> None:
         import servers
         self.current = 0
-        self.stock = stock.sort(getattr(servers, '__all__', None)) or stock
+        self.stock = stock.sort(getattr(servers, '__all__', stock))
         self.args_mapping = args_mapping
 
     def __iter__(self):

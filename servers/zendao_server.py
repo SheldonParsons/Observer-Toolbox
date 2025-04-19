@@ -11,7 +11,7 @@ from core._config import _const
 from core._config._exception import HttpResponseException
 from core.deco import ServerRunner
 from core.base import Server, Parameter
-from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicObject
+from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicFreezeObject
 from core.tooller.async_server import AsyncServerController
 from servers.source.bug_file_controller import generate_bug_file
 
@@ -230,7 +230,7 @@ class ZenDaoServer(Server):
         bug_file_path = generate_bug_file(
             task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
             bug_origin_data)
-        return DynamicObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
+        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
 
 
 ZenDaoProduct = Product

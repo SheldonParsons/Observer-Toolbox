@@ -210,14 +210,11 @@ class RunnerParameter:
         return self.args_mapping
 
 
-class DynamicObject(Mapping):
+class DynamicFreezeObject(Mapping):
     def __getitem__(self, key):
         str_key = str(key)
         if str_key in self.__dict__:
-            value = self.__dict__[str_key]
-            # if isinstance(value, DynamicObject):
-            #     return dict(value)
-            return value
+            return self.__dict__[str_key]
         else:
             raise KeyError(f"Key '{key}' not found")
 
@@ -226,7 +223,7 @@ class DynamicObject(Mapping):
 
     def __iter__(self):
         for key, value in self.__dict__.items():
-            if isinstance(value, DynamicObject):
+            if isinstance(value, DynamicFreezeObject):
                 yield key, dict(value)
             else:
                 yield key, value
@@ -236,7 +233,9 @@ class DynamicObject(Mapping):
             str_key = str(key) if not isinstance(key, str) else key
             if isinstance(value, dict):
                 sanitized_dict = {str(k): v for k, v in value.items()}
-                self.__dict__[str_key] = DynamicObject(**sanitized_dict)
+                self.__dict__[str_key] = DynamicFreezeObject(**sanitized_dict)
+            elif isinstance(value, list):
+                self.__dict__[str_key] = tuple(value)
             else:
                 self.__dict__[str_key] = value
 
@@ -248,11 +247,34 @@ class DynamicObject(Mapping):
     def __repr__(self):
         return str(self.__dict__)
 
+    def __setattr__(self, name, value):
+        if getattr(self, '_initialized', False):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            super().__setattr__(name, value)
+
+    def __delattr__(self, name):
+        if hasattr(self, name):
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+        else:
+            raise AttributeError(
+                f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __setitem__(self, key, value):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
+    def __delitem__(self, key):
+        raise TypeError(
+            f"{self.__class__.__name__} 属性不可变，请勿修改广播对象的值，该操作有可能会影响后续的监听服务。")
+
     def keys(self):
         return self.__dict__.keys()
 
     def values(self):
-        return [(_ := lambda value: dict(value) if isinstance(value, DynamicObject) else value)(value) for value in
+        return [(_ := lambda value: dict(value) if isinstance(value, DynamicFreezeObject) else value)(value) for value in
                 self.__dict__.values()]
 
     def items(self):

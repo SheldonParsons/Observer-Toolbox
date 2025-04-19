@@ -6,7 +6,7 @@ from core.deco import inner_plugin
 from core.base import T, RunnerResult, Data
 from core.generator import ServicePlugin
 from core.root import BASE_DIR
-from core.utils import DynamicObject
+from core.utils import DynamicFreezeObject
 from inner_plugins.source.xmind_case_controller import analyze_xmind
 
 
@@ -19,7 +19,7 @@ class XmindPlugin(ServicePlugin):
         case_result = analyze_xmind(self.xmind_file_path,
                                     '_'.join([self.executionName, os.getenv("XMIND_CASE_ZIP_NAME_SUFFIX")]))
         print(f"case_result:{case_result}")
-        return DynamicObject(case_result=case_result)
+        return DynamicFreezeObject(case_result=case_result)
 
     def get_notify(self, data: Data):
         result: RunnerResult = data.result

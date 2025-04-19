@@ -26,4 +26,5 @@ def clean_inner_observers():
         if key.__name__ in getattr(servers, '__all__', None) or []:
             del server_stock[key]
     PluginPool.set_plugins(
-        [plugin for plugin in PluginPool.get_plugins() if type(plugin).__name__ not in getattr(inner_plugins, '__all__', None) or []])
+        [plugin for plugin in PluginPool.get_plugins() if
+         type(plugin).__name__ not in getattr(inner_plugins, '__all__', [])])

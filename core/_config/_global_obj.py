@@ -24,21 +24,26 @@ def singleton(cls):
 @singleton
 class _PluginPool:
 
-    def __init__(self):
+    def __init__(self, include_inner_plugin: bool = True):
         self.plugins = []
+        self.include_inner_plugin: bool = include_inner_plugin
 
     def register(self, plugin):
         self.plugins.append(plugin)
 
     def get_plugins(self):
-        import inner_plugins
-        sort_list = getattr(inner_plugins, '__all__', None) or []
-        order_map = {name: index for index, name in enumerate(sort_list)}
-        self.plugins.sort(key=lambda p: order_map.get(type(p).__name__, float('inf')))
+        if self.include_inner_plugin:
+            import inner_plugins
+            sort_list = getattr(inner_plugins, '__all__', None) or []
+            order_map = {name: index for index, name in enumerate(sort_list)}
+            self.plugins.sort(key=lambda p: order_map.get(type(p).__name__, float('inf')))
         return self.plugins
 
     def set_plugins(self, plugins):
         self.plugins = plugins
+
+    def set_include_inner_plugin(self, flag):
+        self.include_inner_plugin = flag
 
 
 def _get_plugin_pool() -> _PluginPool:
@@ -89,6 +94,6 @@ def _get_global_data() -> _GlobalData:
     return _GlobalData()
 
 
-_PluginPool:_PluginPool = _get_plugin_pool()
+_PluginPool: _PluginPool = _get_plugin_pool()
 
-_GlobalData:_GlobalData = _get_global_data()
+_GlobalData: _GlobalData = _get_global_data()

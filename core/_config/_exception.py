@@ -1,10 +1,10 @@
-class ReportGenerationException(BaseException):
+class ObserverToolboxException(BaseException):
 
     def __init__(self, message):
         self.message = message
 
 
-class HttpException(ReportGenerationException):
+class HttpException(ObserverToolboxException):
     pass
 
 
@@ -44,13 +44,25 @@ class FileControlException(FileException):
     """
 
 
-class CustomerFuncException(ReportGenerationException):
+class CustomerFuncException(ObserverToolboxException):
     """
     自定义回调函数异常
     """
 
 
-class ExtractException(ReportGenerationException):
+class ExtractException(ObserverToolboxException):
     """
     解析异常
+    """
+
+
+class ModuleException(ObserverToolboxException):
+    """
+    模块异常
+    """
+
+
+class ModuleNotFoundException(ModuleException):
+    """
+    模块不存在
     """

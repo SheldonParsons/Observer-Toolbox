@@ -28,6 +28,7 @@ def _core_const():
         fq.TEMP_FILE_NOT_FOUND_Exception = "系统上下文管理器异常：%s 不是目录"
         fq.TEMP_File_Control_Exception = "清理失败：%s - %s"
         fq.Contxt_Exception = "系统上下文管理器未知异常：%s"
+        fq.Module_Not_Found_Exception = "%s 模块不存在，请通过 %s 尝试安装。异常信息：%s"
         return fq
 
     def __symbol():

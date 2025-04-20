@@ -1,8 +1,21 @@
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-import aiohttp
+
+from core._config import _const
+from core._config._exception import ModuleNotFoundException
 import asyncio
-import aiofiles
+
+try:
+    import aiohttp
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundException(
+        _const.EXCEPTION.Module_Not_Found_Exception % ('aiohttp', 'pip install aiohttp==3.11.16', str(e),))
+try:
+    import aiofiles
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundException(
+        _const.EXCEPTION.Module_Not_Found_Exception % ('aiofiles', 'pip install aiofiles==24.1.0', str(e),))
+
 import os
 import re
 from typing import Union, List, Optional, Callable

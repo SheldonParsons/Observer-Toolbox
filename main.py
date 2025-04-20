@@ -3,27 +3,28 @@ from typing import Union
 
 from core.base import RunnerResult, Data, T
 from core import generator
-from core.generator import GenericServer, ServicePlugin, Parameter, Server, ServerRunner, PluginPool
+from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool
 from core.root import BASE_DIR
 
-from servers import ZenDaoServer
-from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
 
-
-def zen_dao_interface_testing():
-    zds = ZenDaoServer()
-
-    product_list: list[ZenDaoProduct] = zds.get_products()
-    for product in product_list:
-        print(f"product.id:{product.id},product.name:{product.name},product.status:{product.status}")
-
-    project_list: list[ZenDaoProject] = zds.get_project(157)
-    for project in project_list:
-        print(f"project.id:{project.id},project.name:{project.name}")
-
-    execution_list: list[ZenDaoExecution] = zds.get_executions(1123)
-    for execution in execution_list:
-        print(f"execution.id:{execution.id},execution.name:{execution.name}")
+# from servers import ZenDaoServer
+# from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
+#
+#
+# def zen_dao_interface_testing():
+#     zds = ZenDaoServer()
+#
+#     product_list: list[ZenDaoProduct] = zds.get_products()
+#     for product in product_list:
+#         print(f"product.id:{product.id},product.name:{product.name},product.status:{product.status}")
+#
+#     project_list: list[ZenDaoProject] = zds.get_project(157)
+#     for project in project_list:
+#         print(f"project.id:{project.id},project.name:{project.name}")
+#
+#     execution_list: list[ZenDaoExecution] = zds.get_executions(1123)
+#     for execution in execution_list:
+#         print(f"execution.id:{execution.id},execution.name:{execution.name}")
 
 
 class ReportPlugin1(ServicePlugin):
@@ -97,12 +98,6 @@ class ReportPlugin4(ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-class GenericMonitor(GenericServer):
-    source_name = "GenericMonitor--source_name-rewrite"
-
-    def notice(self):
-        print("there is notice function")
-        return "-----notice function-----"
 
 
 class GenericParameter(Parameter):
@@ -142,12 +137,12 @@ def main_testing3():
     # PluginPool.register(report_plugin1)
     # PluginPool.register(report_plugin2)
     # PluginPool.register(report_plugin3)
-    GenericMonitor().notice()
     generator.start(["--zendao_product_id", 157,
                      "--zendao_execution_id", 3568, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2, "--kdocs_files_path",
-                     "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/kdocs_urls.txt","--close_inner_all", 1],
+                     "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/kdocs_urls.txt", "--close_inner_all", 2],
                     [ReportPlugin4()])
+
 
 class ReportPlugindd(ServicePlugin):
 
@@ -164,17 +159,19 @@ class ReportPlugindd(ServicePlugin):
         print(f"source_name:{result.source_name}")
         print(f"source_type:{result.source_type}")
         print(f"get_data():{result.get_data()}")
-        if result.source_name=='ZenDaoServer':
+        if result.source_name == 'ZenDaoServer':
             from core.generator import GlobalData
-            GlobalData.system_parameters.__dict__['taskinfo']=result.get_data()['task']
+            GlobalData.system_parameters.__dict__['taskinfo'] = result.get_data()['task']
             print(f"taskinfo:{GlobalData.system_parameters.__dict__['taskinfo']}")
 
+
 def main_testing():
-    GenericMonitor().notice()
     generator.start(["--zendao_product_id", 157,
                      "--zendao_execution_id", 3587, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
                      "--kdocs_files_path",
                      str(Path(BASE_DIR) / "kdocs_urls.txt")])
+
+
 if __name__ == '__main__':
     main_testing()

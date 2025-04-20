@@ -200,10 +200,13 @@ class ServerPlugin(Plugin):
 
 class ServerStock(Generic[ServerType]):
 
-    def __init__(self, stock: IndexingDict, args_mapping) -> None:
-        import servers
+    def __init__(self, stock: IndexingDict, args_mapping, include_inner_servers: bool = True) -> None:
         self.current = 0
-        self.stock = stock.sort(getattr(servers, '__all__', stock))
+        if include_inner_servers:
+            import servers
+            self.stock = stock.sort(getattr(servers, '__all__', stock))
+        else:
+            self.stock = stock
         self.args_mapping = args_mapping
 
     def __iter__(self):

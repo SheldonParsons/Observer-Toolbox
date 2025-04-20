@@ -1,7 +1,6 @@
 import functools
 import threading
 
-import ijson
 import requests
 from collections import defaultdict
 from collections.abc import Mapping
@@ -10,7 +9,7 @@ from typing import Union, List, Callable
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from core._config import _const
-from core._config._exception import HttpConfigException
+from core._config._exception import HttpConfigException, ModuleNotFoundException
 from urllib.parse import urljoin
 
 
@@ -150,7 +149,7 @@ class Sender:
         return urljoin(self._protocol.value + self._domain, self._path)
 
     def send(self, method=None, domain=None, path=None, params=None, data=None, json=None, headers=None,
-             protocol=None, stream=False, filter_callback: Union[Callable[[dict], List]] = lambda x: x,
+             protocol=None, stream=False, filter_callback: Union[Callable[[dict], List]] = None,
              target: str = None) -> Union[requests.models.Response, List]:
         self.method = method or self._method
         self.domain = domain or self.domain
@@ -164,8 +163,13 @@ class Sender:
         self.result = self.session.request(self.method, self._get_url(), params=self.params, data=self.data,
                                            json=self.json,
                                            headers=self.headers, stream=stream)
-        if self.stream:
+        if self.stream and filter_callback is not None and target is not None:
             self.result.raw.decode_content = True
+            try:
+                import ijson
+            except ModuleNotFoundError as e:
+                raise ModuleNotFoundException(
+                    _const.EXCEPTION.Module_Not_Found_Exception % ('ijson', 'pip install ijson==3.3.0', str(e),))
             bugs_generator = ijson.items(self.result.raw, target)
             return [bug for bug in bugs_generator if filter_callback(bug)]
         return self.result
@@ -274,7 +278,8 @@ class DynamicFreezeObject(Mapping):
         return self.__dict__.keys()
 
     def values(self):
-        return [(_ := lambda value: dict(value) if isinstance(value, DynamicFreezeObject) else value)(value) for value in
+        return [(_ := lambda value: dict(value) if isinstance(value, DynamicFreezeObject) else value)(value) for value
+                in
                 self.__dict__.values()]
 
     def items(self):

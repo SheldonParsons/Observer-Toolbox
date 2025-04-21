@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Union
 
-from core.base import RunnerResult, Data, T
 from core import generator
-from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool
+from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool,RunnerResult, Data, T
 from core.root import BASE_DIR
 
 
@@ -107,27 +106,27 @@ class GenericParameter(Parameter):
         self.name = name
 
 
-@ServerRunner(GenericParameter)
-class ListenTestServer(Server):
-
-    @classmethod
-    def ping(cls) -> bool:
-        pass
-
-    def __init__(self):
-        super().__init__()
-
-    def set_base_headers(self, *args, **kwargs) -> None:
-        pass
-
-    def tokenization(self) -> bool:
-        pass
-
-    def set_tokenization_headers(self):
-        pass
-
-    def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
-        return self.parameter.name
+# @ServerRunner(GenericParameter)
+# class ListenTestServer(Server):
+#
+#     @classmethod
+#     def ping(cls) -> bool:
+#         pass
+#
+#     def __init__(self):
+#         super().__init__()
+#
+#     def set_base_headers(self, *args, **kwargs) -> None:
+#         pass
+#
+#     def tokenization(self) -> bool:
+#         pass
+#
+#     def set_tokenization_headers(self):
+#         pass
+#
+#     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
+#         return self.parameter.name
 
 
 def main_testing3():
@@ -166,11 +165,18 @@ class ReportPlugindd(ServicePlugin):
 
 
 def main_testing():
+    report_plugin1 = ReportPlugin1()
+    report_plugin2 = ReportPlugin2()
+    report_plugin3 = ReportPlugin3()
+    PluginPool.register(report_plugin1)
+    PluginPool.register(report_plugin2)
+    PluginPool.register(report_plugin3)
     generator.start(["--zendao_product_id", 157,
                      "--zendao_execution_id", 3587, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
-                     "--kdocs_files_path",
-                     str(Path(BASE_DIR) / "kdocs_urls.txt")])
+                     "--kdocs_files_path",str(Path(BASE_DIR) / "kdocs_urls.txt"),
+                     "--close_inner_all", 2
+                     ])
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ from core._config import _const
 from core._config._exception import TempFileTypeException, FileControlException, FileException
 from core.monitor import MonitorBase
 from core.root import SourceType, get_base_dir
-from core.utils import Sender, IndexingDict, HiddenDefaultDict, HttpProtocolEnum
+from core.utils import Sender, IndexingDict, HiddenDefaultDict, HttpProtocolEnum, singleton
 
 T = TypeVar("T", bound=object)
 
@@ -23,7 +23,7 @@ class EmptyParameter(Parameter):
     def __init__(self, *args, **kwargs):
         pass
 
-
+@singleton
 class SystemParameters(Parameter):
 
     def __init__(
@@ -46,6 +46,7 @@ class SystemParameters(Parameter):
         self.clean_temp_files = parse_bool_param(clean_temp_files, default=True)
         self.close_inner_all = parse_bool_param(close_inner_all, default=False)
         self.kdocs_files_path = kdocs_files_path
+        self.strict_mode: bool = False
 
 
 class RunnerResult:
@@ -195,7 +196,7 @@ class ServerPlugin(Plugin):
     server_allow_monitor_functions = ["initialize", "run"]
 
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
-        raise NotImplementedError("插件子类必须实现 run 方法！")
+        pass
 
 
 class ServerStock(Generic[ServerType]):
@@ -211,6 +212,9 @@ class ServerStock(Generic[ServerType]):
 
     def __iter__(self):
         return self
+
+    def __len__(self):
+        return len(self.stock)
 
     def __next__(self) -> Union[ServerType, str]:
         try:

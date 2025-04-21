@@ -301,6 +301,9 @@ class IndexingDict(dict):
         super().__delitem__(key)
         self._keys.remove(key)
 
+    def __len__(self):
+        return len(self._keys)
+
     def sort(self, sort_list: List[str]):
         """
         重排序

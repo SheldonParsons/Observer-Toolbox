@@ -22,6 +22,5 @@ def _runner(args: Optional[Union[List[Union[str, int]]]], plugins: List[ServiceP
                                     include_inner_servers=system_parameters.close_inner_all is False)
         list(PluginPool.register(plugin) for plugin in plugins or [])
         list(server.run() for server in stock)
-        list(plugin.run() for plugin in PluginPool.get_plugins())
-
-
+        if system_parameters.strict_mode is False and len(stock) > 0:
+            list(plugin.run() for plugin in PluginPool.get_plugins())

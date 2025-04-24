@@ -230,7 +230,7 @@ class ZenDaoServer(Server):
         bug_file_path = generate_bug_file(
             task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
             bug_origin_data)
-        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
+        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path, temp_path=save_path_list)
 
 
 ZenDaoProduct = Product

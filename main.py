@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from core import generator
-from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool,RunnerResult, Data, T
+from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool, RunnerResult, Data, T
 from core.root import BASE_DIR
 
 
@@ -97,8 +97,6 @@ class ReportPlugin4(ServicePlugin):
         print(f"get_data():{result.get_data()}")
 
 
-
-
 class GenericParameter(Parameter):
 
     def __init__(self, name=None,
@@ -174,7 +172,7 @@ def main_testing():
     generator.start(["--zendao_product_id", 157,
                      "--zendao_execution_id", 3587, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
-                     "--kdocs_files_path",str(Path(BASE_DIR) / "kdocs_urls.txt"),
+                     "--kdocs_files_path", str(Path(BASE_DIR) / "kdocs_urls.txt"),
                      "--close_inner_all", 2
                      ])
 

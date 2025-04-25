@@ -1,5 +1,4 @@
 import os
-import struct
 import zipfile
 from pathlib import Path
 from shutil import rmtree, copyfile

@@ -236,18 +236,3 @@ class AsyncServerController:
             return [line.strip() for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
         except UnicodeDecodeError:
             raise report_exception.FileException("仅支持 UTF-8 编码的文本文件")
-
-
-def get_filename_func(url: str, *args) -> str:
-    path = urlparse(url).path
-    return os.path.basename(path)
-
-
-request_list = [
-    "https://obersertoolbox-testreport.oss-cn-shenzhen.aliyuncs.com/ole_object_bin_templates/oleObject100.bin",
-    "https://obersertoolbox-testreport.oss-cn-shenzhen.aliyuncs.com/ole_object_bin_templates/oleObject200.bin"]
-
-AsyncServerController().generator_files(DownloadServerType.CUSTOM_REQUESTS, customer_extract_func=get_filename_func,
-                                        request_list=request_list, customer_dir=Path(
-        "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/core/tooller/static/templates"),
-                                        force_cover_file_name=True)

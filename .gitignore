@@ -5,6 +5,8 @@ __pycache__/
 
 # project inner
 temp/
+templates/
+xmindcase/
 
 # C extensions
 *.so

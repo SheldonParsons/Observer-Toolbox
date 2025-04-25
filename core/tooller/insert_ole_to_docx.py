@@ -13,7 +13,7 @@ from docx import Document
 
 from core.root import BASE_DIR, get_base_dir
 from core.tooller._gen_pic import generator_icon_picture
-from core.tooller._gen_bin_file import create_bin_with_padding
+from core.tooller._gen_bin_file import create_bin_with_padding, generate_bin_file
 
 ICON_CONFIG = {
     '.xlsx': Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'icns' / 'xlsx.icns',
@@ -27,6 +27,8 @@ ICON_CONFIG = {
 ICON_DEFAULT_CONFIG = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'icns' / 'default.icns'
 
 DEFAULT_FONT_PATH = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts' / 'Arial Unicode.ttf'
+
+OLE_TEMPLATE_DIR = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'templates'
 
 NAMESPACE = {
     'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
@@ -87,6 +89,7 @@ class DocxOleEmbedderController:
         return self
 
     def action(self):
+        generate_bin_file([item for sublist in self.insert_mapping.values() for item in sublist], OLE_TEMPLATE_DIR)
         for search_string, file_path_list in self.insert_mapping.items():
             self.save_file_count = 0
             is_set_and_remove = self._set_and_remove_tag_element(search_string)
@@ -95,6 +98,8 @@ class DocxOleEmbedderController:
                 new_p_element_obj_list = []
                 # 整体添加relationship、embedded_file
                 for embedded_data, file_path in self._get_file_data(file_path_list):
+                    if isinstance(file_path, str) is False:
+                        continue
                     ole_id = self._get_ole_id()
                     rel_id = self.get_target_id()
                     self._add_relationship(FILE_TYPE_REFERENCE, f'embeddings/{ole_id}.bin')
@@ -190,7 +195,6 @@ class DocxOleEmbedderController:
 
     def _set_and_remove_tag_element(self, search_string: str):
         root = self.doc_tree.getroot()
-
         for p_elem in root.iterfind('.//w:p', namespaces=NAMESPACE):
             for r_elem in p_elem.iterfind('.//w:r', namespaces=NAMESPACE):
                 t_elem = r_elem.find('.//w:t', namespaces=NAMESPACE)
@@ -276,8 +280,11 @@ class DocxOleEmbedderController:
     @staticmethod
     def _get_file_data(file_path_list):
         for file_path in file_path_list:
-            with open(file_path, 'rb') as f:
-                yield f.read(), file_path
+            try:
+                with open(file_path, 'rb') as f:
+                    yield f.read(), file_path
+            except TypeError:
+                yield None, file_path
 
     @staticmethod
     def _parse_xml(path):

@@ -34,6 +34,7 @@ VALID_SCHEMES = ('http', 'https')
 
 class DownloadServerType(str, Enum):
     K_DOCS = "kdocs_files_path"
+    CUSTOM_REQUESTS = "custom_requests"
 
 
 class AsyncServerController:
@@ -49,10 +50,14 @@ class AsyncServerController:
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         self.customer_extract_func = None
         self.second_path = Path("")
+        self.using_customer_dir = False
+        self.customer_dir: Union[Path, None] = None
+        self.force_cover_file_name = False
 
     def generator_files(self, server_type: DownloadServerType = DownloadServerType.K_DOCS,
                         customer_extract_func: Callable[[str, ...], Union[str, None]] = None,
-                        path: Union[Path, str] = Path("")) -> \
+                        path: Union[Path, str] = Path(""), request_list: List[str] = None, customer_dir: Path = None,
+                        force_cover_file_name=False) -> \
             tuple[BaseException | str]:
         """
         下载并生成文件任务
@@ -61,12 +66,22 @@ class AsyncServerController:
         :param path: 以core/temp为根路径下的二级路径
             e.g.:(1) "abc/edf" 以【/】分割路径，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
             e.g.:(2) pathlib.Path("abc/edf")，将Path对象与根路径结合，将会自动创建abc/edf，最终保存路径：core/temp/abc/def
+        :param request_list: 自定义请求时的请求url列表
+        :param customer_dir: 自定义请求时希望保存的绝对路径
+        :param force_cover_file_name: 重名时是否强制覆盖文件内容
         :return: 下载文件保存的路径以及下载任务异常集成的列表
         """
         self.second_path = path
         self.customer_extract_func = customer_extract_func
-        from core.generator import GlobalData
-        urls_data = GlobalData.system_parameters.__dict__[server_type.value]
+        urls_data = []
+        self.force_cover_file_name = force_cover_file_name
+        if server_type == DownloadServerType.CUSTOM_REQUESTS:
+            urls_data = request_list
+            self.using_customer_dir = True
+            self.customer_dir = customer_dir
+        if server_type == DownloadServerType.K_DOCS:
+            from core.generator import GlobalData
+            urls_data = GlobalData.system_parameters.__dict__[server_type.value]
         urls_list = self._process_http_urls(urls_data)
         return asyncio.run(self._run(urls_list))
 
@@ -130,12 +145,17 @@ class AsyncServerController:
 
     async def _get_unique_path(self, filename: str) -> Path:
         """生成唯一路径并原子性预留文件（协程安全）"""
-        second_path = Path(self.second_path) if self.second_path else Path()
+        if self.using_customer_dir:
+            base_dir = self.customer_dir
+        else:
+            second_path = Path(self.second_path) if self.second_path else Path()
 
-        if second_path.is_absolute():
-            second_path = Path(*second_path.parts[1:])  # 移除绝对路径的根目录
+            if second_path.is_absolute():
+                second_path = Path(*second_path.parts[1:])  # 移除绝对路径的根目录
 
-        base_dir = self.save_dir / second_path
+            base_dir = self.save_dir / second_path
+        if self.force_cover_file_name:
+            return base_dir / filename
         base_name, ext = os.path.splitext(filename)
 
         counter = 0
@@ -216,3 +236,18 @@ class AsyncServerController:
             return [line.strip() for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
         except UnicodeDecodeError:
             raise report_exception.FileException("仅支持 UTF-8 编码的文本文件")
+
+
+def get_filename_func(url: str, *args) -> str:
+    path = urlparse(url).path
+    return os.path.basename(path)
+
+
+request_list = [
+    "https://obersertoolbox-testreport.oss-cn-shenzhen.aliyuncs.com/ole_object_bin_templates/oleObject100.bin",
+    "https://obersertoolbox-testreport.oss-cn-shenzhen.aliyuncs.com/ole_object_bin_templates/oleObject200.bin"]
+
+AsyncServerController().generator_files(DownloadServerType.CUSTOM_REQUESTS, customer_extract_func=get_filename_func,
+                                        request_list=request_list, customer_dir=Path(
+        "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/core/tooller/static/templates"),
+                                        force_cover_file_name=True)

@@ -1,5 +1,4 @@
 from enum import Enum
-from pprint import pprint
 from typing import List
 
 import dotenv
@@ -12,7 +11,6 @@ from core._config._exception import HttpResponseException
 from core.deco import ServerRunner
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicFreezeObject
-from core.tooller.async_server import AsyncServerController
 from servers.source.bug_file_controller import generate_bug_file
 
 dotenv.load_dotenv()
@@ -217,9 +215,6 @@ class ZenDaoServer(Server):
         return _GetTask(**filter_tasks[0]).get_task()
 
     def run(self, *args, **kwargs):
-        # 借个地方做测试，嘻嘻
-        save_path_list = AsyncServerController().generator_files(path="kkk/eee")
-        pprint(save_path_list)
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
         # 获取BUG列表信息
@@ -230,7 +225,7 @@ class ZenDaoServer(Server):
         bug_file_path = generate_bug_file(
             task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
             bug_origin_data)
-        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path, temp_path=save_path_list)
+        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
 
 
 ZenDaoProduct = Product

@@ -1,6 +1,13 @@
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from core._config import _const
+from core._config._exception import ModuleNotFoundException
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundException(
+        _const.EXCEPTION.Module_Not_Found_Exception % ('pillow', 'pip install pillow==11.2.1', str(e),))
 
 
 def split_text(text, font, max_width):

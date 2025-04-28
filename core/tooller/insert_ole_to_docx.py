@@ -232,8 +232,8 @@ class DocxOleEmbedderController:
         with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as new_zip:
             for root, _, files in os.walk(self.temp_dir):
                 for file in files:
-                    # if file == '[Content_Types].xml':
-                    #     continue
+                    if os.path.abspath(root) == os.path.abspath(self.temp_dir) and (file.endswith('.png') or file.endswith('.docx')):
+                        continue
                     abs_path = os.path.join(root, file)
                     zip_path = os.path.relpath(abs_path, self.temp_dir)
                     new_zip.write(abs_path, zip_path)

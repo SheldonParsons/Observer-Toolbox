@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Union, List
 from urllib.parse import urlparse
 
-from olefile import OleFileIO
+from core._config import _const
+from core._config._exception import ModuleNotFoundException
+
+try:
+    from olefile import OleFileIO
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundException(
+        _const.EXCEPTION.Module_Not_Found_Exception % ('olefile', 'pip install olefile==0.47', str(e),))
 
 from core.tooller.async_server import DownloadServerType, AsyncServerController
 

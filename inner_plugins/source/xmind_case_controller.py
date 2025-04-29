@@ -19,6 +19,7 @@ class AggregatedResult:
         self.failed = 0
         self.passed_rate = 0.0
         self.case_count = 0
+        self.regression=0
 
     def aggregate(self, result: 'AggregatedResult'):
         self.undo += result.undo
@@ -55,10 +56,12 @@ class TagResult(AggregatedResult):
 
         if not makers:
             self.undo += 1
-        elif 'task-done' in makers:
+        if 'task-done' in makers:
             self.success += 1
-        elif "symbol-exclam" in makers:
+        if "symbol-exclam" in makers:
             self.failed += 1
+        if "symbol-idea" in makers:
+            self.regression+=1
 
         self.case_count = len(self.node_results)
         self._update_passed_rate()
@@ -100,6 +103,7 @@ class CollectionResult(AggregatedResult):
             f"失败了 {self.failed} 个用例，"
             f"未执行 {self.undo} 个用例，"
             f"通过率 {self.passed_rate}%"
+            f"其中复用了{self.regression}个用例"
         )
 
     def __repr__(self):
@@ -110,10 +114,11 @@ class Node:
     def __init__(self, tag_result: TagResult, title: str = "", topics: Union[dict, list] = None,
                  makers: List[str] = None, parent_node: 'Node' = None):
         self.cache_path = []
+        self.makers_list = []
         self.parent_node: Node = parent_node
         self.tag_result = tag_result
         self.title = title
-        self.makers = makers or []
+        self.makers = makers
         self.topic = self._parse_topics(topics)
         self.is_final = self.topic is None
 
@@ -123,6 +128,19 @@ class Node:
         if isinstance(topics, dict):
             return Node(self.tag_result, parent_node=self, **topics)
         return [Node(self.tag_result, parent_node=self, **node) for node in topics]
+
+    @property
+    def makers(self):
+        return self.makers_list
+
+    @makers.setter
+    def makers(self, value: str):
+        self.makers_list = self.parent_node.makers_list.copy() if self.parent_node else []
+        if value:
+            for value_node in value:
+                if value_node not in self.makers_list :
+                    self.makers_list.append(value_node)
+
 
     @property
     def title(self):
@@ -179,3 +197,6 @@ def _create_archive(files: List[Union[str, Path]], output_path: Path):
             file = Path(file)
             if file.exists() and file.is_file():
                 archive.write(file, arcname=file.name)
+
+if __name__ == '__main__':
+    case_result = analyze_xmind([r'F:\Gree\github\TestReport\xmindcase\调账昵称.xmind'],'测试结果')

@@ -19,13 +19,14 @@ class AggregatedResult:
         self.failed = 0
         self.passed_rate = 0.0
         self.case_count = 0
-        self.regression=0
+        self.regression = 0
 
     def aggregate(self, result: 'AggregatedResult'):
         self.undo += result.undo
         self.success += result.success
         self.failed += result.failed
         self.case_count += result.case_count
+        self.regression += result.regression
         self._update_passed_rate()
 
     def _update_passed_rate(self):
@@ -50,7 +51,7 @@ class TagResult(AggregatedResult):
         self.node_results: List[TagResult._NodeResult] = []
         self.title = ""
 
-    def append(self, title: str, path: List[str], makers: List[str]):
+    def append(self, title: str, path: List[str], makers: List[str], is_regression: bool):
         node = self._NodeResult(title, path, makers)
         self.node_results.append(node)
 
@@ -58,10 +59,10 @@ class TagResult(AggregatedResult):
             self.undo += 1
         if 'task-done' in makers:
             self.success += 1
-        if "symbol-exclam" in makers:
+        elif "symbol-exclam" in makers:
             self.failed += 1
-        if "symbol-idea" in makers:
-            self.regression+=1
+        if is_regression:
+            self.regression += 1
 
         self.case_count = len(self.node_results)
         self._update_passed_rate()
@@ -111,14 +112,17 @@ class CollectionResult(AggregatedResult):
 
 
 class Node:
+    is_regression: bool  # type: ignore[忽略警告]
+
     def __init__(self, tag_result: TagResult, title: str = "", topics: Union[dict, list] = None,
                  makers: List[str] = None, parent_node: 'Node' = None):
         self.cache_path = []
-        self.makers_list = []
         self.parent_node: Node = parent_node
+        self.makers = makers or []
+        self.is_regression = "symbol-idea" in self.makers or (
+            False if not self.parent_node else self.parent_node.is_regression)
         self.tag_result = tag_result
         self.title = title
-        self.makers = makers
         self.topic = self._parse_topics(topics)
         self.is_final = self.topic is None
 
@@ -128,19 +132,6 @@ class Node:
         if isinstance(topics, dict):
             return Node(self.tag_result, parent_node=self, **topics)
         return [Node(self.tag_result, parent_node=self, **node) for node in topics]
-
-    @property
-    def makers(self):
-        return self.makers_list
-
-    @makers.setter
-    def makers(self, value: str):
-        self.makers_list = self.parent_node.makers_list.copy() if self.parent_node else []
-        if value:
-            for value_node in value:
-                if value_node not in self.makers_list :
-                    self.makers_list.append(value_node)
-
 
     @property
     def title(self):
@@ -160,7 +151,7 @@ class Node:
     def is_final(self, value: bool):
         self._is_final = value
         if value:
-            self.tag_result.append(self.title, self.cache_path, self.makers)
+            self.tag_result.append(self.title, self.cache_path, self.makers, self.is_regression)
 
 
 def analyze_xmind(file_paths: List[Union[str, Path]], zip_name: str) -> CollectionResult:
@@ -183,7 +174,7 @@ def analyze_xmind(file_paths: List[Union[str, Path]], zip_name: str) -> Collecti
                 Node(tag_result, **sheet["topic"])
                 file_result.append(tag_result)
         except Exception as e:
-            continue
+            raise e
 
         collection.append(file_result)
 
@@ -198,5 +189,8 @@ def _create_archive(files: List[Union[str, Path]], output_path: Path):
             if file.exists() and file.is_file():
                 archive.write(file, arcname=file.name)
 
+
 if __name__ == '__main__':
-    case_result = analyze_xmind([r'F:\Gree\github\TestReport\xmindcase\调账昵称.xmind'],'测试结果')
+    case_result = analyze_xmind(['/Users/sheldon/Documents/GithubProject/Observer-Toolbox/xmindcase/调账昵称.xmind'],
+                                '测试结果')
+    print(case_result)

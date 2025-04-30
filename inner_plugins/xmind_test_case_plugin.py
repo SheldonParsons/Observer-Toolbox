@@ -20,7 +20,9 @@ class XmindPlugin(ServicePlugin):
         result: RunnerResult = data.result
         result_data = result.get_data()
         if result.source_name == 'ZenDaoServer' and result_data:
+            print(f"result_data.task:{result_data}")
             self.executionName = result_data.task.executionName.replace(" ", "")
+            print(f"self.executionName:{self.executionName}")
         if result.source_name == 'ExcelSummaryPlugin' and result_data:
             self.xmind_path_list = result_data.xmind_file_list
             print(f"self.xmind_path_list:{self.xmind_path_list}")

@@ -135,6 +135,9 @@ class Sender:
     def protocol(self, value: HttpProtocolEnum) -> None:
         self._protocol = value
 
+    def clean_params(self) -> None:
+        self.params = {}
+
     def patch_headers(self, patch_mapping: dict):
         for key, value in patch_mapping.items():
             self._headers[key] = value

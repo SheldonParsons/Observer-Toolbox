@@ -4,6 +4,12 @@ class ObserverToolboxException(BaseException):
         self.message = message
 
 
+class SystemParameterException(ObserverToolboxException):
+    """
+    系统参数错误
+    """
+
+
 class HttpException(ObserverToolboxException):
     pass
 

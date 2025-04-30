@@ -22,8 +22,7 @@ SUMMARY_EXCEL_NAME = '测试任务分配.xlsx'
 class ExcelSummaryPlugin(ServicePlugin):
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
         save_path_list = AsyncServerController().generator_files(path="global")
-
-        excel_file_path = next(filter(lambda file_path: SUMMARY_EXCEL_NAME in file_path, save_path_list), None)
+        excel_file_path = next(filter(lambda file_path: isinstance(file_path,str) and SUMMARY_EXCEL_NAME in file_path, save_path_list), None)
         if excel_file_path is None:
             raise report_exception.FileException(f"文件不存在：{SUMMARY_EXCEL_NAME}")
         xmind_file_list = [file_path for file_path in save_path_list if file_path.endswith(".xmind")]

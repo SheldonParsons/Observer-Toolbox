@@ -7,7 +7,7 @@ import os
 from requests.models import Response
 
 from core._config import _const
-from core._config._exception import HttpResponseException
+from core.generator import report_exception
 from core.deco import ServerRunner
 from core.base import Server, Parameter
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicFreezeObject
@@ -26,20 +26,26 @@ class ProjectStatus(str, Enum):
 
 class BugStatus(str, Enum):
     ALL = "all"
+    UN_CLOSED = "unclosed"
 
 
 class ZenDaoParameter(Parameter):
 
     def __init__(self, zendao_username=None, zendao_password=None, zendao_execution_id: int = None,
                  zendao_product_id: int = None,
-                 zendao_bug_limit: int = 2000, zendao_bug_status="all",
+                 zendao_bug_limit: int = None,
+                 zendao_test_task_id: int = None,
+                 zendao_bug_status="all",
+                 zendao_bug_filter_title=None,
                  *args, **kwargs):
         self.zendao_username = zendao_username
         self.zendao_password = zendao_password
         self.zendao_execution_id = int(zendao_execution_id)
         self.zendao_product_id = int(zendao_product_id)
-        self.zendao_bug_limit = int(zendao_bug_limit)
-        self.zendao_bug_status = zendao_bug_status
+        self.zendao_test_task_id = int(zendao_test_task_id)
+        self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else None
+        self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
+        self.zendao_bug_filter_title = zendao_bug_filter_title
 
 
 class _Tokenization:
@@ -76,6 +82,16 @@ class Bug:
         self.title = title
 
 
+class Task:
+
+    def __init__(self, begin=None, end=None, executionName=None, name=None, id=None, *args, **kwargs):
+        self.begin = begin
+        self.end = end
+        self.executionName = executionName
+        self.name = name
+        self.id = id
+
+
 @ServerRunner(ZenDaoParameter)
 class ZenDaoServer(Server):
 
@@ -99,7 +115,7 @@ class ZenDaoServer(Server):
     def set_tokenization_headers(self):
         _tokenization_instance = _Tokenization(**self.sender.result.json())
         if _tokenization_instance.Token is None:
-            raise HttpResponseException(
+            raise report_exception.HttpResponseException(
                 _const.EXCEPTION.Http_Login_Failed_Exception % (self.sender.result.json(),))
         self.sender.patch_headers(_tokenization_instance.__dict__)
 
@@ -161,7 +177,8 @@ class ZenDaoServer(Server):
 
         class _BugParams:
             def __init__(self, limit, status):
-                self.limit = limit
+                if limit:
+                    self.limit = limit
                 self.status = status
 
         def _gen_bug_summary_info(bug_list):
@@ -188,31 +205,44 @@ class ZenDaoServer(Server):
             return result_dict.__dict__, bug_origin_data
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
+
+        def bug_filter_callback(bug):
+            return (
+                    bug["execution"] == execution_id and
+                    (
+                            self.parameter.zendao_bug_filter_title is None or
+                            self.parameter.zendao_bug_filter_title in bug["title"]
+                    )
+            )
+
         filtered_bugs: List = self.sender.send(stream=True,
-                                               filter_callback=lambda bug: bug["execution"] == execution_id,
+                                               filter_callback=bug_filter_callback,
                                                target="bugs.item")
+        self.sender.clean_params()
         bug_list = _BugFilter(filtered_bugs).bugs
         return _gen_bug_summary_info(bug_list)
 
-    def get_task_info(self, execution_id):
-        class _GetTask:
-
-            def __init__(self, begin=None, end=None, executionName=None, *args, **kwargs):
-                self.begin = begin
-                self.end = end
-                self.executionName = executionName
-
-            def get_task(self):
-                if None in (self.begin, self.end, self.executionName):
-                    raise HttpResponseException(_const.EXCEPTION.HTTP_Get_Task_Failed_Exception % (execution_id,))
-                return self.__dict__
-
+    def _get_test_task(self, call_back, product_id):
+        self.sender.params = {
+            "product": product_id
+        }
         self.sender.path = os.getenv("ZENDAO_TESTTASKS_LIST")
-        del self.sender.params["status"]
         filter_tasks: List = self.sender.send(stream=True,
-                                              filter_callback=lambda bug: bug["execution"] == execution_id,
+                                              filter_callback=call_back,
                                               target="testtasks.item")
-        return _GetTask(**filter_tasks[0]).get_task()
+        return filter_tasks
+
+    def get_test_tasks(self, product_id):
+        test_tasks = self._get_test_task(lambda x: True, product_id)
+        return [Task(**test_task) for test_task in test_tasks]
+
+    def get_test_task(self, task_id, product_id):
+        filter_tasks = self._get_test_task(lambda task: task["id"] == task_id, product_id)
+        test_task = filter_tasks[0] if filter_tasks else None
+        if test_task is None:
+            raise report_exception.SystemParameterException(
+                "参数错误：--zendao_test_task_id：{self.parameter.zendao_test_task_id}，该参数无法找到测试单")
+        return Task(**test_task)
 
     def run(self, *args, **kwargs):
         execution_id = self.parameter.zendao_execution_id
@@ -220,15 +250,16 @@ class ZenDaoServer(Server):
         # 获取BUG列表信息
         bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id)
         # 获取任务列表信息
-        task_info = self.get_task_info(execution_id)
+        task_info = self.get_test_task(self.parameter.zendao_test_task_id, product_id)
         # 创建BUG文件
         bug_file_path = generate_bug_file(
-            task_info["executionName"].replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
+            task_info.executionName.replace(" ", "") + "_" + os.getenv("ZENDAO_BUG_FILE_NAME"),
             bug_origin_data)
-        return DynamicFreezeObject(bug=bug_info, task=task_info, bug_file_path=bug_file_path)
+        return DynamicFreezeObject(bug=bug_info, task=task_info.__dict__, bug_file_path=bug_file_path)
 
 
 ZenDaoProduct = Product
 ZenDaoProject = Project
 ZenDaoExecution = Execution
 ZenDaoBug = Bug
+ZenDaoTestTask = Task

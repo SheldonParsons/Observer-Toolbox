@@ -5,25 +5,28 @@ from core import generator
 from core.generator import ServicePlugin, Parameter, Server, ServerRunner, PluginPool, RunnerResult, Data, T
 from core.root import BASE_DIR
 
+from servers import ZenDaoServer
+from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution, ZenDaoTestTask
 
-# from servers import ZenDaoServer
-# from servers.zendao_server import ZenDaoProduct, ZenDaoProject, ZenDaoExecution
-#
-#
-# def zen_dao_interface_testing():
-#     zds = ZenDaoServer()
-#
-#     product_list: list[ZenDaoProduct] = zds.get_products()
-#     for product in product_list:
-#         print(f"product.id:{product.id},product.name:{product.name},product.status:{product.status}")
-#
-#     project_list: list[ZenDaoProject] = zds.get_project(157)
-#     for project in project_list:
-#         print(f"project.id:{project.id},project.name:{project.name}")
-#
-#     execution_list: list[ZenDaoExecution] = zds.get_executions(1123)
-#     for execution in execution_list:
-#         print(f"execution.id:{execution.id},execution.name:{execution.name}")
+
+def zen_dao_interface_testing():
+    zds = ZenDaoServer()
+
+    product_list: list[ZenDaoProduct] = zds.get_products()
+    for product in product_list:
+        print(f"product.id:{product.id},product.name:{product.name},product.status:{product.status}")
+
+    project_list: list[ZenDaoProject] = zds.get_project(150)
+    for project in project_list:
+        print(f"project.id:{project.id},project.name:{project.name}")
+
+    execution_list: list[ZenDaoExecution] = zds.get_executions(1058)
+    for execution in execution_list:
+        print(f"execution.id:{execution.id},execution.name:{execution.name}")
+
+    task_list: list[ZenDaoTestTask] = zds.get_test_tasks(150)
+    for test_task in task_list:
+        print(f"test_task.id:{test_task.id},test_task.name:{test_task.name}")
 
 
 class ReportPlugin1(ServicePlugin):
@@ -169,11 +172,16 @@ def main_testing():
     # PluginPool.register(report_plugin1)
     # PluginPool.register(report_plugin2)
     # PluginPool.register(report_plugin3)
-    generator.start(["--zendao_product_id", 157,
-                     "--zendao_execution_id", 3587, "--zendao_bug_limit", 100, "--name", "sheldon parsons",
+    generator.start(["--zendao_product_id", 150,
+                     "--zendao_execution_id", 3698,
+                     "--zendao_test_task_id", 1520,
+                     "--zendao_bug_limit", 100,
+                     "--zendao_bug_status", "all",
+                     "--name", "sheldon parsons",
                      "--clean_temp_files", 2,
                      "--kdocs_files_path", str(Path(BASE_DIR) / "kdocs_urls.txt"),
-                     "--close_inner_all", 2
+                     "--close_inner_all", 2,
+                     # "--zendao_bug_filter_title", "工单详情页面操作新增子信息，服务单详情不显示操作明细"
                      ])
 
 

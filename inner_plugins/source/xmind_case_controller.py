@@ -103,7 +103,7 @@ class CollectionResult(AggregatedResult):
             f"通过了 {self.success} 个用例，"
             f"失败了 {self.failed} 个用例，"
             f"未执行 {self.undo} 个用例，"
-            f"通过率 {self.passed_rate}%"
+            f"通过率 {self.passed_rate}%，"
             f"其中复用了{self.regression}个用例"
         )
 

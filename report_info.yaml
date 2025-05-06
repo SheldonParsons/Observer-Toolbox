@@ -1,0 +1,40 @@
+# 基础信息
+sender: 李博 # 【必填】，报告发送人，多人请使用英文逗号分隔
+reviewer: 成婷婷 # 【必填】，报告复审人，多人请使用英文逗号分隔
+report_type: 测试环境,生产环境,UAT # 【必填】，对应env的name，您可以通过英文逗号进行分隔，同时生成多个环境的测试报告
+out_put_dir: /Users/sheldon/Documents/GithubProject/Observer-Toolbox/xmindcase # 【必填】，报告输出目录
+env: # 请至少保证存在 测试环境 和 生产环境 两个环境配置
+  - name: 测试环境
+    system_url: https://sms4.sms-test.gree.com/sms # 【必填】该环境的测试地址
+    gitlab_url: https://ds-git.gree.com:8888/crm # 【必填】该环境的gitlab地址
+    test_result: 可提交审核，并发布生产版本 #【必填】，测试结论，该值为默认值，您可以进行更改
+    # time: 2025-3-17 至 2025-3-31 # 非必填，如果不填写将使用测试单的周期时间，否则使用该值作为报告的测试时间
+  - name: 生产环境
+    system_url: https://sms4.sms-test.gree.com/sms # 【必填】该环境的测试地址
+    gitlab_url: https://ds-git.gree.com:8888/crm # 【必填】该环境的gitlab地址
+    test_result: 测试通过 #【必填】，测试结论，该值为默认值，您可以进行更改
+    # time: 2025-3-17 至 2025-3-31 # 非必填，如果不填写将使用当天时间，否则使用该值作为报告的测试时间
+  - name: UAT
+    system_url: https://sms4.sms-test.gree.com/sms # 【必填】该环境的测试地址
+    gitlab_url: https://ds-git.gree.com:8888/crm # 【必填】该环境的gitlab地址
+    test_result: 测试通过 #【必填】，测试结论，该值为默认值，您可以进行更改
+    time: 2025-3-17 至 2025-3-31 # 【必填】，如果您的您的类型为非测试环境或生产环境，请填写该值，您可以添加更多的环境配置
+# 禅道配置
+zendao_username: sheldon # 【必填】，获取禅道信息身份验证-用户名
+zendao_password: sheldon666 # 【必填】，获取禅道信息身份验证-密码
+zendao_product_id: 150 # 【必填】，禅道测试应用的产品ID，可以通过 rgs --get_products all --zendao_username sheldon --zendao_password sheldon666 获取产品信息
+zendao_project_id: 1058 # 【必填】，禅道测试应用的项目ID，可以用过 rgs --get_project {product_id} --zendao_username sheldon --zendao_password sheldon666 获取项目信息
+zendao_execution_id: 3698 # 【必填】，禅道测试应用的版本ID，可以用过 rgs --get_executions {project_id} --zendao_username sheldon --zendao_password sheldon666 获取版本信息
+zendao_test_task_id: 1520 # 【必填】，禅道测试应用的测试单ID，可以用过 rgs --get_test_task {product_id} --zendao_username sheldon --zendao_password sheldon666 获取测试单信息
+#zendao_bug_limit: 500 # 非必填，禅道测试应用获取BUG的统计条目数，如果您当前版本需要统计的BUG数量很大，可以调整该值，默认500
+#zendao_bug_status: all # 非必填，禅道测试应用的BUG状态，枚举：all、unclosed
+#zendao_bug_filter_title: sheldon # 非必填，禅道测试BUG列表中BUG名包含的内容
+#zendao_bug_filter_title_not_contains:sheldon # 非必填，禅道测试BUG列表中BUG名不包含的内容
+# 金山配置
+kdocs_files_path: /Users/sheldon/Documents/GithubProject/Observer-Toolbox/kdocs_urls.txt # 【必填】，金山文档需要统计的文件下载地址
+# 报告配置
+test_result_text: 通过 # 【必填】，该值为默认值，您可以进行更改
+test_type: 功能测试，兼容性测试，易用性测试，回归测试 # 【必填】，该值为默认值，您可以进行更改
+real_result: 测试通过率100% # 【必填】，实际结果，该值为默认值，您可以进行更改
+project_risk: 暂无 # 【必填】，项目风险，该值为默认值，您可以进行更改
+#font_name: DejaVu Sans # 非必填，报告字体，如果您处于一个非中文系统中，您需要通过该字段进行字体调整，一般在linux系统上才需要设置，window和macOS通常rgs可以自动选择

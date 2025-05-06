@@ -13,16 +13,12 @@ class XmindPlugin(ServicePlugin):
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
         case_result = analyze_xmind(self.xmind_path_list,
                                     '_'.join([self.executionName, os.getenv("XMIND_CASE_ZIP_NAME_SUFFIX")]))
-        # print(f"case_result:{case_result}")
         return DynamicFreezeObject(case_result=case_result)
 
     def get_notify(self, data: Data):
         result: RunnerResult = data.result
         result_data = result.get_data()
         if result.source_name == 'ZenDaoServer' and result_data:
-            print(f"result_data.task:{result_data}")
             self.executionName = result_data.task.executionName.replace(" ", "")
-            print(f"self.executionName:{self.executionName}")
         if result.source_name == 'ExcelSummaryPlugin' and result_data:
             self.xmind_path_list = result_data.xmind_file_list
-            print(f"self.xmind_path_list:{self.xmind_path_list}")

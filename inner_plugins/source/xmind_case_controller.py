@@ -115,7 +115,7 @@ class Node:
     is_regression: bool  # type: ignore[忽略警告]
 
     def __init__(self, tag_result: TagResult, title: str = "", topics: Union[dict, list] = None,
-                 makers: List[str] = None, parent_node: 'Node' = None):
+                 makers: List[str] = None, parent_node: 'Node' = None,*args, **kwargs):
         self.cache_path = []
         self.parent_node: Node = parent_node
         self.makers = makers or []

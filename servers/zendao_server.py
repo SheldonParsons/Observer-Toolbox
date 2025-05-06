@@ -31,12 +31,15 @@ class BugStatus(str, Enum):
 
 class ZenDaoParameter(Parameter):
 
-    def __init__(self, zendao_username=None, zendao_password=None, zendao_execution_id: int = None,
+    def __init__(self, zendao_username=None,
+                 zendao_password=None,
+                 zendao_execution_id: int = None,
                  zendao_product_id: int = None,
                  zendao_bug_limit: int = None,
                  zendao_test_task_id: int = None,
                  zendao_bug_status="all",
                  zendao_bug_filter_title=None,
+                 zendao_bug_filter_title_not_contains=None,
                  *args, **kwargs):
         self.zendao_username = zendao_username
         self.zendao_password = zendao_password
@@ -46,6 +49,7 @@ class ZenDaoParameter(Parameter):
         self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else None
         self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
         self.zendao_bug_filter_title = zendao_bug_filter_title
+        self.zendao_bug_filter_title_not_contains = zendao_bug_filter_title_not_contains
 
 
 class _Tokenization:
@@ -212,6 +216,10 @@ class ZenDaoServer(Server):
                     (
                             self.parameter.zendao_bug_filter_title is None or
                             self.parameter.zendao_bug_filter_title in bug["title"]
+                    ) and
+                    (
+                            self.parameter.zendao_bug_filter_title_not_contains is None or
+                            self.parameter.zendao_bug_filter_title_not_contains not in bug["title"]
                     )
             )
 

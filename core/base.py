@@ -23,14 +23,25 @@ class EmptyParameter(Parameter):
     def __init__(self, *args, **kwargs):
         pass
 
+
 @singleton
 class SystemParameters(Parameter):
 
     def __init__(
             self,
-            clean_temp_files: str = '1',
+            clean_temp_files: str = '2',
             kdocs_files_path: Union[str, List] = None,
             close_inner_all: str = '2',
+            report_type: str = None,
+            reviewer: str = None,
+            env: List = None,
+            test_type: str = None,
+            real_result: str = None,
+            project_risk: str = None,
+            font_name: str = None,
+            test_result_text: str = None,
+            sender: str = None,
+            out_put_dir: str = None,
             *args,
             **kwargs
     ):
@@ -46,6 +57,16 @@ class SystemParameters(Parameter):
         self.clean_temp_files = parse_bool_param(clean_temp_files, default=True)
         self.close_inner_all = parse_bool_param(close_inner_all, default=False)
         self.kdocs_files_path = kdocs_files_path
+        self.report_type = report_type
+        self.test_result_text = test_result_text
+        self.test_type = test_type
+        self.real_result = real_result
+        self.project_risk = project_risk
+        self.font_name = font_name
+        self.reviewer = reviewer
+        self.sender = sender
+        self.out_put_dir = out_put_dir
+        self.env = env
         self.strict_mode: bool = False
 
 

@@ -172,17 +172,7 @@ def main_testing():
     # PluginPool.register(report_plugin1)
     # PluginPool.register(report_plugin2)
     # PluginPool.register(report_plugin3)
-    generator.start(["--zendao_product_id", 150,
-                     "--zendao_execution_id", 3698,
-                     "--zendao_test_task_id", 1520,
-                     "--zendao_bug_limit", 100,
-                     "--zendao_bug_status", "all",
-                     "--name", "sheldon parsons",
-                     "--clean_temp_files", 2,
-                     "--kdocs_files_path", str(Path(BASE_DIR) / "kdocs_urls.txt"),
-                     "--close_inner_all", 2,
-                     # "--zendao_bug_filter_title", "工单详情页面操作新增子信息，服务单详情不显示操作明细"
-                     ])
+    generator.start(["--info", "/Users/sheldon/Documents/GithubProject/Observer-Toolbox/report_info.yaml"])
 
 
 if __name__ == '__main__':

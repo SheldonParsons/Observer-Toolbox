@@ -1,4 +1,5 @@
 import functools
+import json
 import threading
 
 import requests
@@ -6,6 +7,8 @@ from collections import defaultdict
 from collections.abc import Mapping
 from enum import Enum
 from typing import Union, List, Callable
+
+import yaml
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from core._config import _const
@@ -201,6 +204,10 @@ class HiddenDefaultDict(defaultdict):
 class RunnerParameter:
 
     def __init__(self, args: list):
+        if "--info" in args:
+            info_path = args.index("--info") + 1
+            self.args_mapping = self.get_yaml_info(args[info_path])
+            return
         self.args_mapping = {}
         i = 0
         while i < len(args):
@@ -212,6 +219,11 @@ class RunnerParameter:
                     i += 2
                     continue
             i += 1
+
+    @staticmethod
+    def get_yaml_info(path):
+        with open(path, "r") as file:
+            return yaml.safe_load(file)
 
     def get_args_mapping(self):
         return self.args_mapping
@@ -235,16 +247,24 @@ class DynamicFreezeObject(Mapping):
             else:
                 yield key, value
 
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            str_key = str(key) if not isinstance(key, str) else key
+    def __init__(self, *args, **kwargs):
+        def process_value(value):
+            # 递归处理字典：转换键为字符串，并递归处理值
             if isinstance(value, dict):
-                sanitized_dict = {str(k): v for k, v in value.items()}
-                self.__dict__[str_key] = DynamicFreezeObject(**sanitized_dict)
+                sanitized = {str(k): process_value(v) for k, v in value.items()}
+                return DynamicFreezeObject(**sanitized)
+            # 递归处理列表：转换为元组，并递归处理每个元素
             elif isinstance(value, list):
-                self.__dict__[str_key] = tuple(value)
+                return tuple(process_value(item) for item in value)
+            # 其他类型直接返回
             else:
-                self.__dict__[str_key] = value
+                return value
+
+        for key, value in kwargs.items():
+            # 确保键是字符串
+            str_key = str(key) if not isinstance(key, str) else key
+            # 递归处理值并赋值给实例属性
+            self.__dict__[str_key] = process_value(value)
 
     __annotations__ = {}
 

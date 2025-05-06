@@ -22,9 +22,12 @@ SUMMARY_EXCEL_NAME = '测试任务分配.xlsx'
 class ExcelSummaryPlugin(ServicePlugin):
     def run(self, *args, **kwargs) -> Union[RunnerResult, T]:
         save_path_list = AsyncServerController().generator_files(path="global")
-        excel_file_path = next(filter(lambda file_path: isinstance(file_path,str) and SUMMARY_EXCEL_NAME in file_path, save_path_list), None)
+        excel_file_path = next(
+            filter(lambda file_path: isinstance(file_path, str) and SUMMARY_EXCEL_NAME in file_path, save_path_list),
+            None)
         if excel_file_path is None:
-            raise report_exception.FileException(f"文件不存在：{SUMMARY_EXCEL_NAME}")
+            raise report_exception.FileException(
+                f"文件不存在：{SUMMARY_EXCEL_NAME}，或该文件下载地址已经失效（URL有效期：10分钟，请尝试重新获取）")
         xmind_file_list = [file_path for file_path in save_path_list if file_path.endswith(".xmind")]
         excel_data, pic_list = get_excel_tree_dict(excel_file_path)
         return DynamicFreezeObject(summary_data=excel_data, pic_list=pic_list, xmind_file_list=xmind_file_list)

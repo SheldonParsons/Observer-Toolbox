@@ -51,16 +51,28 @@ class TagResult(AggregatedResult):
         self.node_results: List[TagResult._NodeResult] = []
         self.title = ""
 
-    def append(self, title: str, path: List[str], makers: List[str], is_regression: bool):
+    def append(self, title: str, path: List[str], makers: List[str], is_regression: bool, origin_node=None):
         node = self._NodeResult(title, path, makers)
         self.node_results.append(node)
 
-        if not makers:
+        _origin_node = origin_node
+        _has_makers = False
+        while True:
+            if 'task-done' in _origin_node.makers:
+                self.success += 1
+                _has_makers = True
+                break
+            elif 'symbol-exclam' in _origin_node.makers:
+                self.failed += 1
+                _has_makers = True
+                break
+            else:
+                _origin_node = _origin_node.parent_node
+            if _origin_node.parent_node is None:
+                break
+
+        if _has_makers is False:
             self.undo += 1
-        if 'task-done' in makers:
-            self.success += 1
-        elif "symbol-exclam" in makers:
-            self.failed += 1
         if is_regression:
             self.regression += 1
 
@@ -115,7 +127,7 @@ class Node:
     is_regression: bool  # type: ignore[忽略警告]
 
     def __init__(self, tag_result: TagResult, title: str = "", topics: Union[dict, list] = None,
-                 makers: List[str] = None, parent_node: 'Node' = None,*args, **kwargs):
+                 makers: List[str] = None, parent_node: 'Node' = None, *args, **kwargs):
         self.cache_path = []
         self.parent_node: Node = parent_node
         self.makers = makers or []
@@ -151,7 +163,7 @@ class Node:
     def is_final(self, value: bool):
         self._is_final = value
         if value:
-            self.tag_result.append(self.title, self.cache_path, self.makers, self.is_regression)
+            self.tag_result.append(self.title, self.cache_path, self.makers, self.is_regression, self)
 
 
 def analyze_xmind(file_paths: List[Union[str, Path]], zip_name: str) -> CollectionResult:
@@ -191,6 +203,6 @@ def _create_archive(files: List[Union[str, Path]], output_path: Path):
 
 
 if __name__ == '__main__':
-    case_result = analyze_xmind(['/Users/sheldon/Documents/GithubProject/Observer-Toolbox/xmindcase/调账昵称.xmind'],
+    case_result = analyze_xmind(['/Users/sheldon/Documents/crm/t/中心主题.xmind'],
                                 '测试结果')
     print(case_result)

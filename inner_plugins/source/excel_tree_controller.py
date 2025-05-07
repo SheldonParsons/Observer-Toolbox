@@ -41,12 +41,15 @@ class ExcelTreeController:
 
     class ModelRow:
 
-        def __init__(self, model: str):
+        def __init__(self, model: str, requirement: Union[List, None] = None):
             self.model = model
-            self.requirement = []
+            self.requirement = requirement or []
 
         def __repr__(self):
             return json.dumps(self.__dict__, default=lambda o: o.__dict__, ensure_ascii=False)
+
+        def append_requirements(self, requirement):
+            self.requirement.append(requirement)
 
         def to_dict(self):
             return {
@@ -55,9 +58,9 @@ class ExcelTreeController:
             }
 
     class RequirementRow:
-        def __init__(self, name: str):
+        def __init__(self, name: str, pic: Union[List, None] = None):
             self.name = name
-            self.pic: List[str] = []
+            self.pic: List[str] = pic or []
 
         def __repr__(self):
             return json.dumps(self.__dict__)
@@ -102,7 +105,35 @@ class ExcelTreeController:
             row.requirement[-1].pic.append(row.requirement[-2].pic[0])
 
     def get_data(self):
-        return [model.to_dict() for model in self.data]
+        _data = self.de_duplicates(self.data)
+        return [model.to_dict() for model in self.change_to_obj(_data)]
+
+    @staticmethod
+    def de_duplicates(data: List):
+        cache_model = {}
+        for index, item in enumerate(data):
+            _item: ExcelTreeController.ModelRow = item
+            _model = cache_model.get(_item.model, None)
+            if _model is None:
+                cache_model[_item.model] = {}
+            for requirement in _item.requirement:
+                _requirement = cache_model[_item.model].get(requirement.name, None)
+                if _requirement is None:
+                    cache_model[_item.model][requirement.name] = set()
+                for pic in requirement.pic:
+                    cache_model[_item.model][requirement.name].add(pic)
+        return cache_model
+
+    @staticmethod
+    def change_to_obj(data: dict):
+        cache_list = []
+        for key, value in data.items():
+            _model = ExcelTreeController.ModelRow(key)
+            for re_name, re_pic_set in value.items():
+                _requirement = ExcelTreeController.RequirementRow(re_name, list(re_pic_set))
+                _model.append_requirements(_requirement)
+            cache_list.append(_model)
+        return cache_list
 
 
 def get_excel_tree_dict(path: Path):

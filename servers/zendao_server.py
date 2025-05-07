@@ -49,7 +49,7 @@ class ZenDaoParameter(Parameter):
         self.zendao_execution_id = int(zendao_execution_id)
         self.zendao_product_id = int(zendao_product_id)
         self.zendao_test_task_id = int(zendao_test_task_id)
-        self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else None
+        self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else 500
         self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
         self.zendao_bug_filter_title = zendao_bug_filter_title
         self.zendao_bug_filter_title_not_contains = zendao_bug_filter_title_not_contains

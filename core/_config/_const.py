@@ -3,6 +3,7 @@ import sys
 EXCEPTION = None
 SYMBOL = None
 HTTP_CONFIG = None
+NOTIFY = None
 
 
 class FreeQuote:
@@ -31,10 +32,17 @@ def _core_const():
         fq.Module_Not_Found_Exception = "%s 模块不存在，请通过 %s 尝试安装。异常信息：%s"
         return fq
 
+    def __notify():
+        fq = FreeQuote()
+        fq.Success_Generation_File = "测试报告已生成：%s"
+        return fq
+
     def __symbol():
         fq = FreeQuote()
         fq.SplitArgsSymbol = ','
         fq.ParamsStartWithSymbol = '-'
+        fq.DocxFileCasesInsertSymbol = "{test_cases}"
+        fq.DocxFileBugsInsertSymbol = "{test_bugs}"
         return fq
 
     def __http_config():
@@ -43,6 +51,7 @@ def _core_const():
         return fq
 
     sys.modules[__name__].EXCEPTION = __exception()
+    sys.modules[__name__].NOTIFY = __notify()
     sys.modules[__name__].SYMBOL = __symbol()
     sys.modules[__name__].HTTP_CONFIG = __http_config()
 

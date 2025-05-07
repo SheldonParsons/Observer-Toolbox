@@ -149,7 +149,6 @@ class Server(ABC, metaclass=MonitorBase):
     def __init__(self, domain=None, protocol=HttpProtocolEnum.HTTP):
         self.sender = Sender(domain, protocol)
         self.parameter: Union[Parameter, dict] = HiddenDefaultDict(None)
-        self.initialize()
 
     def initialize(self):
         """
@@ -241,8 +240,10 @@ class ServerStock(Generic[ServerType]):
         try:
             server_class, server_parameter_class = self.stock.get_item(self.current)
             self.current += 1
-            server_instance: Server = server_class()
-            server_instance.parameter = server_parameter_class(**self.args_mapping)
+            parameter = server_parameter_class(**self.args_mapping)
+            server_instance = server_class()
+            server_instance.parameter = parameter
+            server_instance.initialize()
             return server_instance
         except IndexError:
             raise StopIteration

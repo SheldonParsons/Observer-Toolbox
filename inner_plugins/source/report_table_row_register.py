@@ -1,6 +1,8 @@
 import functools
 from typing import List
 
+from core._config import _const
+
 row_description_cache_list = []
 
 
@@ -201,7 +203,7 @@ def _17(data):
 def _18(data):
     _cache = []
     _cache.append(CellSingleMixin("测试用例", False))
-    _cache.append(CellInfo(data["test_cases"], 1, 3, False, other_paragraphs=["{test_cases}"]))
+    _cache.append(CellInfo(data["test_cases"], 1, 3, False, other_paragraphs=[_const.SYMBOL.DocxFileCasesInsertSymbol]))
     return [_cache]
 
 
@@ -209,7 +211,7 @@ def _18(data):
 def _19(data):
     _cache = []
     _cache.append(CellSingleMixin("缺陷汇总", False))
-    _cache.append(CellInfo(data["bugs"], 1, 3, False, other_paragraphs=["{test_bugs}"]))
+    _cache.append(CellInfo(data["bugs"], 1, 3, False, other_paragraphs=[_const.SYMBOL.DocxFileBugsInsertSymbol]))
     return [_cache]
 
 

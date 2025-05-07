@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 from typing import List
 
 import dotenv
@@ -7,13 +8,15 @@ import os
 from requests.models import Response
 
 from core._config import _const
+from core._config._exception import SystemParameterException
 from core.generator import report_exception
 from core.deco import ServerRunner
 from core.base import Server, Parameter
+from core.root import BASE_DIR
 from core.utils import HttpProtocolEnum, HttpMethodEnum, HiddenDefaultDict, DynamicFreezeObject
 from servers.source.bug_file_controller import generate_bug_file
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(dotenv_path=Path(BASE_DIR) / "core" / ".env")
 
 
 class ProductStatus(str, Enum):
@@ -50,6 +53,13 @@ class ZenDaoParameter(Parameter):
         self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
         self.zendao_bug_filter_title = zendao_bug_filter_title
         self.zendao_bug_filter_title_not_contains = zendao_bug_filter_title_not_contains
+
+
+class ZenDaoSearchParameter(Parameter):
+
+    def __init__(self, zendao_username=None, zendao_password=None, *args, **kwargs):
+        self.zendao_username = zendao_username
+        self.zendao_password = zendao_password
 
 
 class _Tokenization:
@@ -120,7 +130,7 @@ class ZenDaoServer(Server):
         _tokenization_instance = _Tokenization(**self.sender.result.json())
         if _tokenization_instance.Token is None:
             raise report_exception.HttpResponseException(
-                _const.EXCEPTION.Http_Login_Failed_Exception % (self.sender.result.json(),))
+                _const.EXCEPTION.Http_Login_Failed_Exception % ("【禅道登录异常】" + str(self.sender.result.json()),))
         self.sender.patch_headers(_tokenization_instance.__dict__)
 
     def get_headers(self):
@@ -157,6 +167,7 @@ class ZenDaoServer(Server):
                 self.projects = projects
 
         self.sender.path = os.getenv("ZENDAO_PROJECT_LIST")
+        self.sender.method = HttpMethodEnum.GET
         self.sender.params = _ProjectParams(product_id).__dict__
         result: Response = self.sender.send()
         return [Project(**project) for project in _ProjectFilter(**result.json()).projects]
@@ -235,6 +246,7 @@ class ZenDaoServer(Server):
             "product": product_id
         }
         self.sender.path = os.getenv("ZENDAO_TESTTASKS_LIST")
+        self.sender.method = HttpMethodEnum.GET
         filter_tasks: List = self.sender.send(stream=True,
                                               filter_callback=call_back,
                                               target="testtasks.item")
@@ -271,3 +283,46 @@ ZenDaoProject = Project
 ZenDaoExecution = Execution
 ZenDaoBug = Bug
 ZenDaoTestTask = Task
+
+
+class HelpAction:
+
+    def __init__(self, zendao_username=None, zendao_password=None, get_products=None, get_projects=None,
+                 get_executions=None, get_test_tasks=None, *args, **kwargs):
+        self.zendao_username = zendao_username
+        self.zendao_password = zendao_password
+        self.get_products = get_products
+        self.get_projects = get_projects
+        self.get_executions = get_executions
+        self.get_test_tasks = get_test_tasks
+
+    def get_info(self):
+        if any(x is not None for x in [self.get_products, self.get_projects, self.get_executions, self.get_test_tasks]):
+            if self.zendao_username is None or self.zendao_password is None:
+                raise SystemParameterException("您正在查询禅道信息，参数：zendao_username、zendao_password不能为空。")
+            zds = ZenDaoServer()
+            zds.parameter = ZenDaoSearchParameter(**self.__dict__)
+            zds.initialize()
+        else:
+            return False
+        if self.get_products:
+            product_list: list[ZenDaoProduct] = zds.get_products()
+            for product in product_list:
+                print(f"产品ID：{product.id}，产品名：{product.name}，产品状态：{product.status}")
+            return True
+        if self.get_projects:
+            project_list: list[ZenDaoProject] = zds.get_project(self.get_projects)
+            for project in project_list:
+                print(f"项目ID:{project.id}，项目名称：{project.name}")
+            return True
+        if self.get_executions:
+            execution_list: list[ZenDaoExecution] = zds.get_executions(self.get_executions)
+            for execution in execution_list:
+                print(f"版本ID：{execution.id}，版本名称：{execution.name}")
+            return True
+        if self.get_test_tasks:
+            task_list: list[ZenDaoTestTask] = zds.get_test_tasks(self.get_test_tasks)
+            for test_task in task_list:
+                print(f"测试单ID：{test_task.id}，测试单名称：{test_task.name}")
+            return True
+        return False

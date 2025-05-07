@@ -1,5 +1,4 @@
 import functools
-import json
 import threading
 
 import requests
@@ -12,8 +11,17 @@ import yaml
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from core._config import _const
-from core._config._exception import HttpConfigException, ModuleNotFoundException
+from core._config._exception import HttpConfigException, ModuleNotFoundException, SystemParameterException
 from urllib.parse import urljoin
+
+YAML_FILE_ROOT_REQUIRED_PARAMETERS = ["sender", "reviewer", "report_type", "out_put_dir", "env", "zendao_username",
+                                      "zendao_password", "zendao_product_id", "zendao_project_id",
+                                      "zendao_execution_id", "zendao_test_task_id", "kdocs_files_path",
+                                      "test_result_text", "test_type", "real_result", "project_risk"]
+
+YAML_FILE_ENV_REQUIRED_PARAMETERS = ["name", "system_url", "gitlab_url", "test_result"]
+YAML_FILE_OTHER_ENV_REQUIRED_PARAMETERS = ["time"]
+YAML_FILE_DEFAULT_ENVS = ["测试环境", "生产环境"]
 
 
 class HttpMethodEnum(str, Enum):
@@ -201,6 +209,46 @@ class HiddenDefaultDict(defaultdict):
         return dict.__repr__(self)
 
 
+PARAMETER_HELP_INFO = [
+    {
+        "name": "--info",
+        "desc": "指定运行依赖的配置文件，并运行ReportGenerationSummary",
+        "eg": "rgs --info /User/lib/report_info.yaml"
+    },
+    {
+        "name": "--get_products",
+        "desc": "用于获取禅道账号的产品信息",
+        "eg": "rgs --get_products all --zendao_username {禅道账号} --zendao_password {禅道密码}"
+    },
+    {
+        "name": "--get_projects",
+        "desc": "用于获取禅道账号产品项目信息",
+        "eg": "rgs --get_projects {product_id} --zendao_username {禅道账号} --zendao_password {禅道账号}"
+    },
+    {
+        "name": "--get_executions",
+        "desc": "用于获取禅道账号项目下的版本信息",
+        "eg": "rgs --get_executions {project_id} --zendao_username {禅道账号} --zendao_password {禅道账号}"
+    },
+    {
+        "name": "--get_test_tasks",
+        "desc": "用于获取禅道账号产品下的测试单信息",
+        "eg": "rgs --get_test_tasks {product_id} --zendao_username {禅道账号} --zendao_password {禅道账号}"
+    }
+]
+
+
+def help_info():
+    title = "=" * 20 + "欢迎使用Observer-Toolbox(ReportGenerationSummary)" + "=" * 20 + "\n"
+    main_content = []
+    for item in PARAMETER_HELP_INFO:
+        content = ""
+        content += f'【{item["name"]}】{item["desc"]}\n'
+        content += f'\t示例:{item["eg"]}'
+        main_content.append(content)
+    print(title + "\n\n".join(main_content))
+
+
 class RunnerParameter:
 
     def __init__(self, args: list):
@@ -220,10 +268,36 @@ class RunnerParameter:
                     continue
             i += 1
 
-    @staticmethod
-    def get_yaml_info(path):
+    def get_yaml_info(self, path):
         with open(path, "r") as file:
-            return yaml.safe_load(file)
+            file_data: dict = yaml.safe_load(file)
+            check_result = self.check_yaml_parameter(file_data)
+            if check_result is not True:
+                raise SystemParameterException(check_result)
+            return file_data
+
+    @staticmethod
+    def check_yaml_parameter(file_data: dict) -> bool:
+        missing_params = [param for param in YAML_FILE_ROOT_REQUIRED_PARAMETERS if param not in file_data]
+        if missing_params:
+            raise SystemParameterException(f"yaml文件缺少参数：{missing_params}")
+        check_env_name_list = file_data["report_type"].split(_const.SYMBOL.SplitArgsSymbol)
+        set_env_name_list = [env["name"] for env in file_data["env"]]
+        missing = set(check_env_name_list) - set(set_env_name_list)
+        if missing:
+            raise SystemParameterException(
+                f"yaml文件参数错误：您在参数【report_type】中配置了环境：{check_env_name_list}，但是缺少配置环境：{missing}")
+        for env in file_data["env"]:
+            name = env["name"]
+            if name not in check_env_name_list:
+                continue
+            missing = [param for param in YAML_FILE_ENV_REQUIRED_PARAMETERS if param not in env]
+            if missing:
+                raise SystemParameterException(f"yaml文件缺少参数：环境：【{name}】，参数：{missing}")
+            if env["name"] not in YAML_FILE_DEFAULT_ENVS:
+                if "time" not in env.keys():
+                    raise SystemParameterException(f"yaml文件缺少参数：环境：【{name}】，参数：[time]")
+        return True
 
     def get_args_mapping(self):
         return self.args_mapping

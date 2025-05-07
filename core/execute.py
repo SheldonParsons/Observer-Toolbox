@@ -5,10 +5,14 @@ from core.deco import server_stock
 from core.base import ServerStock, Server, SystemContext, SystemParameters
 from core.utils import RunnerParameter
 from core.generator import ServicePlugin
+from servers.zendao_server import HelpAction
 
 
 def _runner(args: Optional[Union[List[Union[str, int]]]], plugins: List[ServicePlugin]):
     args_mapping = RunnerParameter(args).get_args_mapping()
+    help_action = HelpAction(**args_mapping)
+    if help_action.get_info() is True:
+        return
     system_parameters = SystemParameters(**args_mapping)
     if system_parameters.close_inner_all is False:
         import importlib

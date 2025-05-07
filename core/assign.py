@@ -3,6 +3,7 @@ from typing import List
 
 from core._config import _const
 from core.execute import _runner
+from core.utils import help_info
 
 
 @singledispatch
@@ -20,7 +21,7 @@ def start(args, plugin=None):
 
 
 @start.register
-def _(args: None, plugins: List=None):
+def _(args: None, plugins: List = None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -28,7 +29,7 @@ def _(args: None, plugins: List=None):
 
 
 @start.register
-def _(args: int, plugins: List=None):
+def _(args: int, plugins: List = None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -36,7 +37,7 @@ def _(args: int, plugins: List=None):
 
 
 @start.register
-def _(args: str, plugins: List=None):
+def _(args: str, plugins: List = None):
     def _except():
         raise KeyError(_const.EXCEPTION.LoadingArgs % (str(args, )))
 
@@ -44,7 +45,10 @@ def _(args: str, plugins: List=None):
 
 
 @start.register
-def _(args: list, plugins: List=None):
+def _(args: list, plugins: List = None):
+    if "--help" in args:
+        help_info()
+        return
     if len(args) == 0 or len(args) % 2 != 0:
         raise KeyError(_const.EXCEPTION.CheckRunningArgs % ('[]',))
     for item in args:

@@ -24,8 +24,13 @@ ICON_CONFIG = {
 }
 
 ICON_DEFAULT_CONFIG = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'icns' / 'default.icns'
+import sys
 
-DEFAULT_FONT_PATH = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts' / 'Arial Unicode.ttf'
+if sys.platform == 'win32':
+    DEFAULT_CONFIG = 'simkai.ttf'
+if sys.platform == 'darwin':
+    DEFAULT_FONT_PATH = "Arial Unicode.ttf"
+# DEFAULT_FONT_PATH = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts' / 'Arial Unicode.ttf'
 
 OLE_TEMPLATE_DIR = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'templates'
 

@@ -8,6 +8,7 @@ from docx.oxml.ns import qn
 from datetime import datetime
 import platform
 
+from core._config import _const
 from core.tooller.insert_ole_to_docx import insert_files_to_docx
 from inner_plugins.source.report_table_row_register import get_row_info, BaseCell, EmptyCell, CellInfo
 
@@ -52,8 +53,9 @@ def collection_zen_tao_server(reference_data_object, data):
     # 测试版本
     reference_data_object["version"] = data.task["executionName"].split('/')[1].strip()
     # 标题
-    reference_data_object["report_title"] = data.task["executionName"].replace('/', '-') + "-" + reference_data_object[
-        "name"] + "测试报告"
+    reference_data_object["report_title"] = data.task["executionName"].replace('/', '-').replace(" ", "") + "-" + \
+                                            reference_data_object[
+                                                "name"] + "测试报告"
     # 缺陷
     bug_string = reference_data_object["version"] + f"共发现{data['bug']['total']}个问题，其中"
     for level, count in data['bug']["severity_mapping"].items():
@@ -112,11 +114,13 @@ class ReportController:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         insert_mapping = {
-            "{test_bugs}": [self.bug_file_path],
-            "{test_cases}": self.xmind_file_list
+            _const.SYMBOL.DocxFileBugsInsertSymbol: [self.bug_file_path],
+            _const.SYMBOL.DocxFileCasesInsertSymbol: self.xmind_file_list
         }
         self.doc = insert_files_to_docx(self.doc, insert_mapping)
-        self.doc.save(Path(self.out_put_dir) / (self.report_title + '.docx'))
+        save_path = Path(self.out_put_dir) / (self.report_title + '.docx')
+        self.doc.save(save_path)
+        print(_const.NOTIFY.Success_Generation_File % (save_path,))
 
     def draw_title(self):
         secrets_title_paragraph = self.doc.add_paragraph()

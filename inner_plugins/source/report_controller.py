@@ -12,6 +12,7 @@ from core._config import _const
 from core.tooller.insert_ole_to_docx import insert_files_to_docx
 from inner_plugins.source.report_table_row_register import get_row_info, BaseCell, EmptyCell, CellInfo
 
+SECRET_LEVEL = "秘密▲"
 # 测试进度模版
 TEST_PROGRESS = "%s\n上述所有模块，均已完成测试，测试进度100%%"
 # 测试用例模版
@@ -98,7 +99,7 @@ def dispatch_info_collection(name: str, reference_data_object: dict, data):
 class ReportController:
 
     def __init__(self, report_title: str = "", font_name: Union[str, None] = None, out_put_dir: str = None,
-                 bug_file_path: str = None, xmind_file_list: List[str] = None, *args,
+                 bug_file_path: str = None, xmind_file_list: List[str] = None, secret_level: str = None, *args,
                  **kwargs):
         self.report_title = report_title
         self.font_name = font_name
@@ -107,6 +108,7 @@ class ReportController:
         self.out_put_dir = out_put_dir
         self.bug_file_path = bug_file_path
         self.xmind_file_list = xmind_file_list
+        self.secret_level = secret_level or SECRET_LEVEL
 
     def __enter__(self):
         self.doc = Document()
@@ -124,7 +126,7 @@ class ReportController:
 
     def draw_title(self):
         secrets_title_paragraph = self.doc.add_paragraph()
-        secrets_title = secrets_title_paragraph.add_run("机密▲3年")
+        secrets_title = secrets_title_paragraph.add_run(self.secret_level)
         self.set_font_info(secrets_title, self.get_preferred_font(), 10, True)
         title_paragraph = self.doc.add_paragraph()
         title_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER

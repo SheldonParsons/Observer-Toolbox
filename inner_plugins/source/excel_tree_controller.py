@@ -16,6 +16,8 @@ mark_column = ["模块", "需求", "负责人"]
 class ExcelTreeController:
 
     def __init__(self, path: Path):
+        self.is_model_blank = False
+        self.is_requirement_blank = False
         self.path = path
         self.workbook = None
         self.worksheet = None
@@ -31,6 +33,7 @@ class ExcelTreeController:
         self.model_header_index = self.headers.index(mark_column[0])
         self.requirement_header_index = self.headers.index(mark_column[1])
         self.pic_header_index = self.headers.index(mark_column[2])
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -90,17 +93,21 @@ class ExcelTreeController:
             self.cache_row_tag = value
         if len(self.data) < self.current_row:
             self.data.append(self.ModelRow(value))
+        self.is_model_blank = value is None
 
     def requirement_handle(self, value: Union[str, None]):
         if value is not None:
             row = self.data[-1]
             row.requirement.append(self.RequirementRow(value))
+        self.is_requirement_blank = value is None
 
     def pic_handle(self, value: Union[str, None]):
         row = self.data[-1]
         if value is not None:
             row.requirement[-1].pic.append(value)
             self.copy_pic_list.add(value)
+        elif value is None and self.is_model_blank and self.is_requirement_blank:
+            return
         else:
             row.requirement[-1].pic.append(row.requirement[-2].pic[0])
 
@@ -143,4 +150,4 @@ def get_excel_tree_dict(path: Path):
 
 
 if __name__ == '__main__':
-    print(get_excel_tree_dict(Path('/Users/sheldon/Documents/Sheldon/ttttt/work_test.xlsx')))
+    print(get_excel_tree_dict(Path('/Users/sheldon/Documents/GithubProject/temp/测试任务分配表.xlsx')))

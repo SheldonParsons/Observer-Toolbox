@@ -40,6 +40,7 @@ class ZenDaoParameter(Parameter):
                  zendao_product_id: int = None,
                  zendao_bug_limit: int = None,
                  zendao_test_task_id: int = None,
+                 zendao_version_id: int = None,
                  zendao_bug_status="all",
                  zendao_bug_filter_title=None,
                  zendao_bug_filter_title_not_contains=None,
@@ -49,6 +50,7 @@ class ZenDaoParameter(Parameter):
         self.zendao_execution_id = int(zendao_execution_id)
         self.zendao_product_id = int(zendao_product_id)
         self.zendao_test_task_id = int(zendao_test_task_id)
+        self.zendao_version_id = int(zendao_version_id)
         self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else 500
         self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
         self.zendao_bug_filter_title = zendao_bug_filter_title
@@ -85,6 +87,13 @@ class Execution:
     def __init__(self, id=None, name=None, *args, **kwargs):
         self.id = id
         self.name = name
+
+
+class Version:
+    def __init__(self, id=None, name=None, bugs=None, *args, **kwargs):
+        self.id = id
+        self.name = name
+        self.bugs = bugs
 
 
 class Bug:
@@ -179,10 +188,28 @@ class ZenDaoServer(Server):
 
         self.sender.path = os.getenv("ZENDAO_EXECUTION_LIST") % (project_id,)
         self.sender.method = HttpMethodEnum.GET
+        self.sender.clean_params()
         result: Response = self.sender.send()
         return [Execution(**execution) for execution in _ExecutionFilter(**result.json()).executions]
 
-    def get_bug_info(self, product_id, execution_id):
+    def get_versions(self, executions_id):
+        self.sender.path = os.getenv("ZENDAO_VERSION_LIST") % (executions_id,)
+        self.sender.method = HttpMethodEnum.GET
+        self.sender.clean_params()
+        result: Response = self.sender.send()
+        return [Version(**version) for version in result.json()["builds"]]
+
+    def _set_bug_list_by_version(self, executions_id):
+        self.sender.path = os.getenv("ZENDAO_VERSION_LIST") % (executions_id,)
+        self.sender.method = HttpMethodEnum.GET
+        self.sender.clean_params()
+        result: Response = self.sender.send()
+        for version in result.json()["builds"]:
+            version = Version(**version)
+            if version.id == self.parameter.zendao_version_id:
+                return version
+
+    def get_bug_info(self, product_id, execution_id, version: Version):
         self.sender.path = os.getenv("ZENDAO_BUG_LIST") % (str(product_id),)
         self.sender.method = HttpMethodEnum.GET
 
@@ -223,7 +250,7 @@ class ZenDaoServer(Server):
 
         def bug_filter_callback(bug):
             return (
-                    bug["execution"] == execution_id and
+                    bug["id"] in version.bugs and
                     (
                             self.parameter.zendao_bug_filter_title is None or
                             self.parameter.zendao_bug_filter_title in bug["title"]
@@ -267,8 +294,9 @@ class ZenDaoServer(Server):
     def run(self, *args, **kwargs):
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
+        version: Version = self._set_bug_list_by_version(execution_id)
         # 获取BUG列表信息
-        bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id)
+        bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id, version)
         # 获取任务列表信息
         task_info = self.get_test_task(self.parameter.zendao_test_task_id, product_id)
         # 创建BUG文件
@@ -283,21 +311,24 @@ ZenDaoProject = Project
 ZenDaoExecution = Execution
 ZenDaoBug = Bug
 ZenDaoTestTask = Task
+ZenDaoVersion = Version
 
 
 class HelpAction:
 
     def __init__(self, zendao_username=None, zendao_password=None, get_products=None, get_projects=None,
-                 get_executions=None, get_test_tasks=None, *args, **kwargs):
+                 get_executions=None, get_test_tasks=None, get_versions=None, *args, **kwargs):
         self.zendao_username = zendao_username
         self.zendao_password = zendao_password
         self.get_products = get_products
         self.get_projects = get_projects
         self.get_executions = get_executions
         self.get_test_tasks = get_test_tasks
+        self.get_versions = get_versions
 
     def get_info(self):
-        if any(x is not None for x in [self.get_products, self.get_projects, self.get_executions, self.get_test_tasks]):
+        if any(x is not None for x in
+               [self.get_products, self.get_projects, self.get_executions, self.get_test_tasks, self.get_versions]):
             if self.zendao_username is None or self.zendao_password is None:
                 raise SystemParameterException("您正在查询禅道信息，参数：zendao_username、zendao_password不能为空。")
             zds = ZenDaoServer()
@@ -318,11 +349,16 @@ class HelpAction:
         if self.get_executions:
             execution_list: list[ZenDaoExecution] = zds.get_executions(self.get_executions)
             for execution in execution_list:
-                print(f"版本ID：{execution.id}，版本名称：{execution.name}")
+                print(f"版本ID：{execution.id}，执行名称：{execution.name}")
             return True
         if self.get_test_tasks:
             task_list: list[ZenDaoTestTask] = zds.get_test_tasks(self.get_test_tasks)
             for test_task in task_list:
                 print(f"测试单ID：{test_task.id}，测试单名称：{test_task.name}")
+            return True
+        if self.get_versions:
+            version_list: list[ZenDaoVersion] = zds.get_versions(self.get_versions)
+            for version in version_list:
+                print(f"版本ID：{version.id}，版本名称：{version.name}")
             return True
         return False

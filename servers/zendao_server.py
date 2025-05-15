@@ -208,6 +208,7 @@ class ZenDaoServer(Server):
             version = Version(**version)
             if version.id == self.parameter.zendao_version_id:
                 return version
+        raise RuntimeError(f"当前执行ID【{executions_id}】下没有找到版本号：【{self.parameter.zendao_version_id}】")
 
     def get_bug_info(self, product_id, execution_id, version: Version):
         self.sender.path = os.getenv("ZENDAO_BUG_LIST") % (str(product_id),)
@@ -247,26 +248,37 @@ class ZenDaoServer(Server):
             return result_dict.__dict__, bug_origin_data
 
         self.sender.params = _BugParams(self.parameter.zendao_bug_limit, self.parameter.zendao_bug_status).__dict__
+        bug_mapping = {}
+        for env in self.system_parameter["env"]:
+            if env["name"] not in self.system_parameter["report_type"]:
+                continue
+            else:
+                bug_mapping[env["name"]] = {"filter": env["bug_filter"], "bugs": []}
 
         def bug_filter_callback(bug):
-            return (
-                    bug["id"] in version.bugs and
-                    (
-                            self.parameter.zendao_bug_filter_title is None or
-                            self.parameter.zendao_bug_filter_title in bug["title"]
-                    ) and
-                    (
-                            self.parameter.zendao_bug_filter_title_not_contains is None or
-                            self.parameter.zendao_bug_filter_title_not_contains not in bug["title"]
-                    )
-            )
+            if bug["id"] not in version.bugs:
+                return False
+            if (self.parameter.zendao_bug_filter_title is not None) and self.parameter.zendao_bug_filter_title not in \
+                    bug[
+                        "title"]:
+                return False
+            if (
+                    self.parameter.zendao_bug_filter_title_not_contains is not None) and self.parameter.zendao_bug_filter_title_not_contains in \
+                    bug["title"]:
+                return False
+            for env_name, mapping in bug_mapping.items():
+                if mapping["filter"].lower() in bug["title"].lower():
+                    bug_mapping[env_name]["bugs"].append(bug)
 
-        filtered_bugs: List = self.sender.send(stream=True,
-                                               filter_callback=bug_filter_callback,
-                                               target="bugs.item")
+        self.sender.send(stream=True,
+                         filter_callback=bug_filter_callback,
+                         target="bugs.item")
         self.sender.clean_params()
-        bug_list = _BugFilter(filtered_bugs).bugs
-        return _gen_bug_summary_info(bug_list)
+        origin_bug_list = []
+        for env_name, mapping in bug_mapping.items():
+            mapping["bugs"], origin_bug = _gen_bug_summary_info(mapping["bugs"])
+            origin_bug_list.extend(origin_bug)
+        return bug_mapping, origin_bug_list
 
     def _get_test_task(self, call_back, product_id):
         self.sender.params = {

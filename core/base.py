@@ -131,6 +131,7 @@ class Server(ABC, metaclass=MonitorBase):
     def __init__(self, domain=None, protocol=HttpProtocolEnum.HTTP):
         self.sender = Sender(domain, protocol)
         self.parameter: Union[Parameter, dict] = HiddenDefaultDict(None)
+        self.system_parameter = {}
 
     def initialize(self):
         """
@@ -225,6 +226,7 @@ class ServerStock(Generic[ServerType]):
             parameter = server_parameter_class(**self.args_mapping)
             server_instance = server_class()
             server_instance.parameter = parameter
+            server_instance.system_parameter = self.args_mapping
             server_instance.initialize()
             return server_instance
         except IndexError:

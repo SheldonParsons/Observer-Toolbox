@@ -31,7 +31,7 @@ DEFAULT_FONT_PATH = None
 if sys.platform == 'win32':
     DEFAULT_FONT_PATH = 'simkai.ttf'
 elif sys.platform == 'darwin':
-    DEFAULT_FONT_PATH = "Ariadwdwl Unicode.ttf"
+    DEFAULT_FONT_PATH = "Arial Unicode.ttf"
 
 EXCEPTION_DEFAULT_FONT_DIR = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts'
 

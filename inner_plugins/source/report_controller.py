@@ -60,14 +60,14 @@ def collection_zen_tao_server(reference_data_object, data):
     # 缺陷
     bug_target = data['bug'][reference_data_object["name"]]["bugs"]
     if bug_target['total'] > 0:
-        bug_string = f"【{reference_data_object["name"]}】{reference_data_object["version"]}共发现{bug_target['total']}个问题，其中"
+        bug_string = f"【{reference_data_object['name']}】{reference_data_object['version']}共发现{bug_target['total']}个问题，其中"
         for level, count in bug_target["severity_mapping"].items():
             bug_string += BUG_SEVERITY_MAPPING[level] + str(count) + "个，"
         for resolution, count in bug_target["resolution_mapping"].items():
-            bug_string += BUG_RESOLUTION_MAPPING[resolution] + str(count) + "个，"
+            bug_string += BUG_RESOLUTION_MAPPING.get(resolution, "未指定") + str(count) + "个，"
         bug_string = bug_string[:-1] + '。'
     else:
-        bug_string = f"【{reference_data_object["name"]}】{reference_data_object["version"]}共发现{bug_target['total']}个问题。"
+        bug_string = f"【{reference_data_object['name']}】{reference_data_object['version']}共发现{bug_target['total']}个问题。"
     reference_data_object["bugs"] = TEST_BUG % (bug_string,)
     reference_data_object["bug_file_path"] = data.bug_file_path
     return reference_data_object

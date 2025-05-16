@@ -26,11 +26,14 @@ ICON_CONFIG = {
 ICON_DEFAULT_CONFIG = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'icns' / 'default.icns'
 import sys
 
+DEFAULT_FONT_PATH = None
+
 if sys.platform == 'win32':
-    DEFAULT_CONFIG = 'simkai.ttf'
-if sys.platform == 'darwin':
-    DEFAULT_FONT_PATH = "Arial Unicode.ttf"
-# DEFAULT_FONT_PATH = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts' / 'Arial Unicode.ttf'
+    DEFAULT_FONT_PATH = 'simkai.ttf'
+elif sys.platform == 'darwin':
+    DEFAULT_FONT_PATH = "Ariadwdwl Unicode.ttf"
+
+EXCEPTION_DEFAULT_FONT_DIR = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'fonts'
 
 OLE_TEMPLATE_DIR = Path(BASE_DIR) / 'core' / 'tooller' / 'static' / 'templates'
 

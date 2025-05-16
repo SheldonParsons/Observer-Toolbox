@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import dotenv
 import os
@@ -50,7 +50,7 @@ class ZenDaoParameter(Parameter):
         self.zendao_execution_id = int(zendao_execution_id)
         self.zendao_product_id = int(zendao_product_id)
         self.zendao_test_task_id = int(zendao_test_task_id)
-        self.zendao_version_id = int(zendao_version_id)
+        self.zendao_version_id = zendao_version_id or int(zendao_version_id)
         self.zendao_bug_limit = int(zendao_bug_limit) if zendao_bug_limit else 500
         self.zendao_bug_status = BugStatus.ALL.value if zendao_bug_status == BugStatus.ALL.value else BugStatus.UN_CLOSED.value
         self.zendao_bug_filter_title = zendao_bug_filter_title
@@ -210,7 +210,7 @@ class ZenDaoServer(Server):
                 return version
         raise RuntimeError(f"当前执行ID【{executions_id}】下没有找到版本号：【{self.parameter.zendao_version_id}】")
 
-    def get_bug_info(self, product_id, execution_id, version: Version):
+    def get_bug_info(self, product_id, execution_id, version: Union[Version, None]):
         self.sender.path = os.getenv("ZENDAO_BUG_LIST") % (str(product_id),)
         self.sender.method = HttpMethodEnum.GET
 
@@ -253,11 +253,25 @@ class ZenDaoServer(Server):
             if env["name"] not in self.system_parameter["report_type"]:
                 continue
             else:
-                bug_mapping[env["name"]] = {"filter": env["bug_filter"], "bugs": []}
+                bug_filter = {
+                    "include": [],
+                    "exclude": []
+                }
+                bug_filter_list = env["bug_filter"].split(',') if ',' in env["bug_filter"] else [env["bug_filter"]]
+                for bug_filter_name in bug_filter_list:
+                    if bug_filter_name.startswith('-'):
+                        bug_filter["exclude"].append(bug_filter_name[1:])
+                    else:
+                        bug_filter["include"].append(bug_filter_name)
+                bug_mapping[env["name"]] = {"filter": bug_filter, "bugs": []}
 
         def bug_filter_callback(bug):
-            if bug["id"] not in version.bugs:
-                return False
+            if self.parameter.zendao_bug_range == "version":
+                if bug["id"] not in version.bugs:
+                    return False
+            else:
+                if bug["execution"] != execution_id:
+                    return False
             if (self.parameter.zendao_bug_filter_title is not None) and self.parameter.zendao_bug_filter_title not in \
                     bug[
                         "title"]:
@@ -267,7 +281,10 @@ class ZenDaoServer(Server):
                     bug["title"]:
                 return False
             for env_name, mapping in bug_mapping.items():
-                if mapping["filter"].lower() in bug["title"].lower():
+                match_include = next(
+                    (name for name in mapping["filter"]["include"] if name.lower() in bug["title"].lower()), None)
+                match_exclude = all(name.lower() not in bug["title"].lower() for name in mapping["filter"]["exclude"])
+                if match_include and match_exclude:
                     bug_mapping[env_name]["bugs"].append(bug)
 
         self.sender.send(stream=True,
@@ -306,7 +323,12 @@ class ZenDaoServer(Server):
     def run(self, *args, **kwargs):
         execution_id = self.parameter.zendao_execution_id
         product_id = self.parameter.zendao_product_id
-        version: Version = self._set_bug_list_by_version(execution_id)
+        zendao_bug_range = self.parameter.zendao_bug_range
+        version = None
+        if zendao_bug_range is None or zendao_bug_range == "version":
+            if self.parameter.zendao_version_id == None:
+                raise RuntimeError("缺少参数：--zendao_version_id")
+            version = self._set_bug_list_by_version(execution_id)
         # 获取BUG列表信息
         bug_info, bug_origin_data = self.get_bug_info(product_id, execution_id, version)
         # 获取任务列表信息
